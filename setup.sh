@@ -6,14 +6,21 @@
 set -e
 
 # Detect home directory and script location
-USER_HOME="$HOME"
+# If running as sudo, get the actual user's home directory
+if [ -n "$SUDO_USER" ]; then
+    ACTUAL_USER="$SUDO_USER"
+    USER_HOME=$(eval echo ~$SUDO_USER)
+else
+    ACTUAL_USER="$(whoami)"
+    USER_HOME="$HOME"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CURRENT_USER="$(whoami)"
 
 echo "Starting TouchStream Setup..."
+echo "Actual user: $ACTUAL_USER"
 echo "Home directory: $USER_HOME"
 echo "Script directory: $SCRIPT_DIR"
-echo "Current user: $CURRENT_USER"
 
 # 0. Expand filesystem to fill SD card
 echo "Expanding filesystem to fill disk..."
@@ -39,7 +46,7 @@ cat <<EOF > $USER_HOME/edid-1080p30.txt
 4B 0F 51 0F 00 0A 20 20 20 20 20 20 00 00 00 FF
 00 30 30 30 30 30 30 30 30 0A 20 20 20 20 00 4E
 EOF
-chown $CURRENT_USER:$CURRENT_USER $USER_HOME/edid-1080p30.txt
+chown $ACTUAL_USER:$ACTUAL_USER $USER_HOME/edid-1080p30.txt
 
 echo "Creating systemd service for EDID..."
 sudo tee /etc/systemd/system/tc358743-edid.service > /dev/null <<EOF
@@ -77,7 +84,7 @@ NoDisplay=false
 X-GNOME-Autostart-enabled=true
 Comment=TouchStream Video Preview
 EOF
-chown -R $CURRENT_USER:$CURRENT_USER $USER_HOME/.config/autostart
+chown -R $ACTUAL_USER:$ACTUAL_USER $USER_HOME/.config/autostart
 
 # Set display scaling to smallest (for better screen real estate)
 echo "Setting display scaling to smallest..."
@@ -96,7 +103,7 @@ iNet/EnableEventSounds=0
 iNet/EnableInputFeedbackSounds=0
 sGtk/ColorScheme=
 EOF
-chown -R $CURRENT_USER:$CURRENT_USER $USER_HOME/.config/lxsession
+chown -R $ACTUAL_USER:$ACTUAL_USER $USER_HOME/.config/lxsession
 
 # Also set DPI scaling for smaller UI elements
 mkdir -p $USER_HOME/.config/autostart
@@ -110,7 +117,7 @@ NoDisplay=true
 X-GNOME-Autostart-enabled=true
 Comment=Set display DPI for smaller UI
 EOF
-chown -R $CURRENT_USER:$CURRENT_USER $USER_HOME/.config/autostart
+chown -R $ACTUAL_USER:$ACTUAL_USER $USER_HOME/.config/autostart
 
 # 4. Update config.txt
 echo "Updating /boot/firmware/config.txt..."
@@ -149,7 +156,50 @@ else
     echo "cma=512M already present in cmdline.txt"
 fi
 
-# 5. Install Screen Driver (Last step - reboots)
+# 5. Create first-boot completion script (runs after screen driver reboot)
+echo "Creating first-boot completion script..."
+cat > $SCRIPT_DIR/complete-setup.sh << 'EOFSCRIPT'
+#!/bin/bash
+# Complete TouchStream setup after screen driver installation
+set -e
+
+echo "Completing TouchStream setup after screen driver installation..."
+
+# Add TC358743 configuration to config.txt
+echo "Adding TC358743 HDMI capture card configuration..."
+sudo bash -c 'cat >> /boot/firmware/config.txt << EOF
+
+# TC358743 HDMI Capture Card Configuration
+avoid_warnings=1
+camera_auto_detect=0
+dtoverlay=tc358743,4lane=1,link-frequency=297000000
+dtoverlay=tc358743-audio
+EOF'
+
+echo "✓ TC358743 configuration added"
+echo ""
+echo "Setup complete! Rebooting to load capture card drivers..."
+sleep 3
+sudo reboot
+EOFSCRIPT
+
+chmod +x $SCRIPT_DIR/complete-setup.sh
+chown $ACTUAL_USER:$ACTUAL_USER $SCRIPT_DIR/complete-setup.sh
+
+echo ""
+echo "=========================================="
+echo "IMPORTANT: Two-Stage Installation"
+echo "=========================================="
+echo "Stage 1 (current): Installing screen driver - system will reboot"
+echo "Stage 2 (after reboot): Run this command to complete setup:"
+echo ""
+echo "  cd $SCRIPT_DIR && sudo bash complete-setup.sh"
+echo ""
+echo "=========================================="
+echo ""
+sleep 5
+
+# 6. Install Screen Driver (Last step - reboots)
 echo "Installing MHS35 screen driver..."
 cd $USER_HOME
 if [ -d "LCD-show" ]; then
