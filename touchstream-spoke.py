@@ -395,7 +395,7 @@ class PreviewRoot(FloatLayout):
         
         # CPU usage label (bottom right)
         self.cpu_usage_label = Label(
-            text='--%%',
+            text='--%',
             font_size='12sp',
             size_hint=(0.2, 0.08),
             pos_hint={'x': 0.78, 'y': 0.0},
@@ -566,14 +566,14 @@ class PreviewRoot(FloatLayout):
                         usage = 100.0 * (1.0 - idle_delta / total_delta)
                         self._last_cpu_idle = idle
                         self._last_cpu_total = total
-                        return f"{usage:.0f}%%"
+                        return f"{usage:.0f}%"
                 
                 # First run, just store values
                 self._last_cpu_idle = idle
                 self._last_cpu_total = total
-                return "--%%"
+                return "--%"
         except Exception:
-            return "--%%"
+            return "--%"
 
     def heartbeat(self, dt):
         """Update status and FPS displays"""
