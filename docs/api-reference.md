@@ -376,6 +376,7 @@ ffmpeg \
 | `audio_bitrate` | string | `"128k"` | AAC bitrate (e.g., "96k", "192k") |
 | `resolution` | string | `"1920x1080"` | Video resolution (WxH) |
 | `framerate` | string | `"30"` | Video frame rate (fps) |
+| `audio_muted` | boolean | `false` | Local audio playback muted |
 
 ### Example (Unadopted)
 
@@ -403,7 +404,8 @@ ffmpeg \
   "video_bitrate": "4000k",
   "audio_bitrate": "128k",
   "resolution": "1920x1080",
-  "framerate": "30"
+  "framerate": "30",
+  "audio_muted": false
 }
 ```
 
@@ -495,6 +497,23 @@ card 2: tc358743 [tc358743], device 0: bcm2835-i2s-dir-hifi dir-hifi-0 []
 ```bash
 arecord -D hw:2,0 -f S16_LE -r 48000 -c 2 test.wav
 ```
+
+### Audio Monitoring Pipeline
+
+The spoke includes a GStreamer pipeline for local audio monitoring:
+
+```
+alsasrc device=hw:2,0
+  ! audioconvert
+  ! level interval=50000000
+  ! volume
+  ! autoaudiosink
+```
+
+**Features:**
+- Real-time stereo level metering (50ms intervals)
+- Mute control via volume element
+- Local playback through Pi's audio output
 
 ---
 

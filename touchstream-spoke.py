@@ -39,6 +39,8 @@ from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.config import Config
+from kivy.uix.widget import Widget
+from kivy.graphics import Color, Rectangle
 
 # GStreamer
 try:
@@ -68,6 +70,9 @@ CAPTURE_WIDTH = 1920
 CAPTURE_HEIGHT = 1080
 CAPTURE_FPS = 30  # Strict 30fps only
 
+# Screen sleep settings
+SCREEN_SLEEP_TIMEOUT = 3 * 60 * 60  # 3 hours in seconds
+
 DEFAULT_CONFIG = {
     'device_id': None,
     'device_name': platform.node(),
@@ -76,7 +81,8 @@ DEFAULT_CONFIG = {
     'video_bitrate': '4000k',
     'audio_bitrate': '128k',
     'resolution': f'{CAPTURE_WIDTH}x{CAPTURE_HEIGHT}',
-    'framerate': str(CAPTURE_FPS)
+    'framerate': str(CAPTURE_FPS),
+    'audio_muted': False
 }
 
 # ---- Config helpers ----
@@ -198,8 +204,9 @@ def udp_beacon_thread():
 
 # ---- FFmpeg streamer controller ----
 class FfmpegStreamer:
-    def __init__(self):
+    def __init__(self, on_start_callback=None):
         self.proc = None
+        self.on_start_callback = on_start_callback
 
     def start(self, cfg):
         if not cfg.get('ingest_url'):
@@ -232,6 +239,9 @@ class FfmpegStreamer:
         try:
             self.proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             print("FFmpeg started")
+            # Notify callback (used to wake screen)
+            if self.on_start_callback:
+                self.on_start_callback()
             return True
         except Exception as e:
             print("Failed to start ffmpeg:", e)
@@ -306,6 +316,129 @@ class GstPreview:
             self.appsink = None
             print("GStreamer preview stopped")
 
+
+# ---- Audio Monitor (captures HDMI audio, plays locally, provides levels) ----
+class AudioMonitor:
+    def __init__(self, on_level_callback):
+        self.on_level = on_level_callback
+        self.pipeline = None
+        self.running = False
+        self.muted = False
+        self.volume_element = None
+        if not GST_OK:
+            raise RuntimeError("GStreamer not available")
+
+    def build_pipeline(self):
+        # Capture from ALSA, analyze levels, play to default output
+        # level element provides RMS/peak levels for metering
+        pipeline_str = (
+            f"alsasrc device={AUDIO_DEVICE} ! "
+            "audioconvert ! "
+            "level name=level interval=50000000 ! "  # 50ms intervals
+            "volume name=vol ! "
+            "autoaudiosink"
+        )
+        print(f"Building audio pipeline: {pipeline_str}")
+        self.pipeline = Gst.parse_launch(pipeline_str)
+        
+        # Get volume element for mute control
+        self.volume_element = self.pipeline.get_by_name('vol')
+        
+        # Connect to bus for level messages
+        bus = self.pipeline.get_bus()
+        bus.add_signal_watch()
+        bus.connect('message::element', self._on_level_message)
+
+    def _on_level_message(self, bus, message):
+        if message.get_structure().get_name() == 'level':
+            # Extract RMS levels for left and right channels
+            rms = message.get_structure().get_value('rms')
+            if rms and len(rms) >= 2:
+                # Convert from dB to linear (0-1 range)
+                # RMS is in dB, typically -60 to 0
+                left_db = rms[0]
+                right_db = rms[1]
+                # Clamp and normalize: -60dB = 0, 0dB = 1
+                left = max(0, min(1, (left_db + 60) / 60))
+                right = max(0, min(1, (right_db + 60) / 60))
+                self.on_level(left, right)
+
+    def start(self):
+        if not self.pipeline:
+            self.build_pipeline()
+        ret = self.pipeline.set_state(Gst.State.PLAYING)
+        if ret == Gst.StateChangeReturn.FAILURE:
+            print("Failed to start audio pipeline!")
+            return False
+        self.running = True
+        print("Audio monitor started")
+        return True
+
+    def stop(self):
+        self.running = False
+        if self.pipeline:
+            self.pipeline.set_state(Gst.State.NULL)
+            self.pipeline = None
+            self.volume_element = None
+            print("Audio monitor stopped")
+
+    def set_mute(self, muted):
+        self.muted = muted
+        if self.volume_element:
+            self.volume_element.set_property('mute', muted)
+            print(f"Audio {'muted' if muted else 'unmuted'}")
+
+
+# ---- Stereo Level Meter Widget ----
+class StereoMeter(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.left_level = 0
+        self.right_level = 0
+        self.bar_width = 8  # Width of each bar
+        self.bar_gap = 2    # Gap between bars
+        self.bind(pos=self._update_canvas, size=self._update_canvas)
+        self._update_canvas()
+
+    def _update_canvas(self, *args):
+        self.canvas.clear()
+        with self.canvas:
+            # Background (dark)
+            Color(0.15, 0.15, 0.15, 0.8)
+            Rectangle(pos=self.pos, size=self.size)
+            
+            # Calculate bar dimensions
+            bar_height = self.height - 4  # 2px padding top/bottom
+            left_x = self.x + 2
+            right_x = self.x + 2 + self.bar_width + self.bar_gap
+            bar_y = self.y + 2
+            
+            # Left channel (green gradient based on level)
+            left_h = bar_height * self.left_level
+            if self.left_level > 0.8:
+                Color(1, 0.3, 0.3, 1)  # Red for high
+            elif self.left_level > 0.5:
+                Color(1, 0.8, 0.2, 1)  # Yellow for medium
+            else:
+                Color(0.3, 0.9, 0.3, 1)  # Green for normal
+            Rectangle(pos=(left_x, bar_y), size=(self.bar_width, left_h))
+            
+            # Right channel
+            right_h = bar_height * self.right_level
+            if self.right_level > 0.8:
+                Color(1, 0.3, 0.3, 1)
+            elif self.right_level > 0.5:
+                Color(1, 0.8, 0.2, 1)
+            else:
+                Color(0.3, 0.9, 0.3, 1)
+            Rectangle(pos=(right_x, bar_y), size=(self.bar_width, right_h))
+
+    def set_levels(self, left, right):
+        self.left_level = left
+        self.right_level = right
+        self._update_canvas()
+
+
 # ---- Kivy UI ----
 class PreviewRoot(FloatLayout):
     def __init__(self, **kwargs):
@@ -321,6 +454,10 @@ class PreviewRoot(FloatLayout):
         self.frames_since_last_check = 0
         self.has_signal = False
         self.info_visible = False
+        
+        # Screen sleep state
+        self.last_activity_time = time.time()
+        self.screen_asleep = False
 
         # Image widget for video frames - add first so it's behind everything
         from kivy.uix.image import Image
@@ -366,12 +503,20 @@ class PreviewRoot(FloatLayout):
         self.fps_label.bind(size=self.fps_label.setter('text_size'))
         self.add_widget(self.fps_label)
 
+        # ---- LEFT SIDE: Stereo Audio Meter ----
+        self.audio_meter = StereoMeter(
+            size_hint=(None, 0.25),
+            width=24,  # 8+2+8+2+4 = 24px wide
+            pos_hint={'x': 0.01, 'center_y': 0.5}
+        )
+        self.add_widget(self.audio_meter)
+
         # ---- BOTTOM BAR (25px, with edge padding) ----
         # CPU temp label (bottom left)
         self.cpu_temp_label = Label(
             text='--°C',
             font_size='12sp',
-            size_hint=(0.2, 0.08),
+            size_hint=(0.15, 0.08),
             pos_hint={'x': 0.02, 'y': 0.0},
             halign='left',
             valign='middle',
@@ -380,12 +525,26 @@ class PreviewRoot(FloatLayout):
         self.cpu_temp_label.bind(size=self.cpu_temp_label.setter('text_size'))
         self.add_widget(self.cpu_temp_label)
         
+        # Mute button (bottom bar, left of center)
+        self.mute_btn = Button(
+            text='🔊',
+            font_size='16sp',
+            size_hint=(0.12, 0.08),
+            pos_hint={'x': 0.18, 'y': 0.0},
+            background_color=(0.2, 0.2, 0.2, 0.8),
+            background_normal='',
+            color=(1, 1, 1, 1)
+        )
+        self.mute_btn.bind(on_release=self._toggle_mute)
+        self.add_widget(self.mute_btn)
+        self.audio_muted = self.cfg.get('audio_muted', False)
+        
         # Tap hint (center)
         self.tap_hint = Label(
             text='Tap for info',
             font_size='14sp',
-            size_hint=(0.56, 0.08),
-            pos_hint={'x': 0.22, 'y': 0.0},
+            size_hint=(0.38, 0.08),
+            pos_hint={'x': 0.31, 'y': 0.0},
             halign='center',
             valign='middle',
             color=(1, 1, 1, 0.6)
@@ -397,8 +556,8 @@ class PreviewRoot(FloatLayout):
         self.cpu_usage_label = Label(
             text='--%',
             font_size='12sp',
-            size_hint=(0.2, 0.08),
-            pos_hint={'x': 0.78, 'y': 0.0},
+            size_hint=(0.15, 0.08),
+            pos_hint={'x': 0.83, 'y': 0.0},
             halign='right',
             valign='middle',
             color=(1, 1, 1, 0.6)
@@ -424,11 +583,14 @@ class PreviewRoot(FloatLayout):
         # Track overlay state
         self.info_visible = False
 
-        # Initialize streamer and preview
-        self.ff = FfmpegStreamer()
+        # Initialize streamer, preview, and audio monitor
+        self.ff = FfmpegStreamer(on_start_callback=self._on_stream_start)
         self.gst = None
+        self.audio = None
         self._pending_frame = None
         self._frame_lock = threading.Lock()
+        self._pending_audio_levels = None
+        self._audio_lock = threading.Lock()
 
         if GST_OK:
             try:
@@ -438,6 +600,17 @@ class PreviewRoot(FloatLayout):
             except Exception as e:
                 print("Failed to start GstPreview:", e)
                 self.no_signal_label.text = f"Error: {e}"
+            
+            # Start audio monitor
+            try:
+                self.audio = AudioMonitor(self.on_audio_level)
+                if self.audio.start():
+                    # Apply saved mute state
+                    if self.audio_muted:
+                        self.audio.set_mute(True)
+                        self.mute_btn.text = '🔇'
+            except Exception as e:
+                print("Failed to start AudioMonitor:", e)
 
         # Touch handling
         Window.bind(on_touch_down=self._on_touch)
@@ -455,6 +628,11 @@ class PreviewRoot(FloatLayout):
             self._pending_frame = data
         self.frame_count += 1
         self.frames_since_last_check += 1
+
+    def on_audio_level(self, left, right):
+        """Called from GStreamer thread - store audio levels"""
+        with self._audio_lock:
+            self._pending_audio_levels = (left, right)
 
     def update_display(self, dt):
         """Called on main thread - update texture if we have a new frame"""
@@ -476,9 +654,45 @@ class PreviewRoot(FloatLayout):
                     self.has_signal = True
             except Exception as e:
                 print(f"Texture update failed: {e}")
+        
+        # Update audio meter
+        levels = None
+        with self._audio_lock:
+            if self._pending_audio_levels is not None:
+                levels = self._pending_audio_levels
+                self._pending_audio_levels = None
+        
+        if levels is not None:
+            self.audio_meter.set_levels(levels[0], levels[1])
+
+    def _toggle_mute(self, instance):
+        """Toggle audio mute state"""
+        self.audio_muted = not self.audio_muted
+        if self.audio:
+            self.audio.set_mute(self.audio_muted)
+        
+        # Update button text
+        self.mute_btn.text = '🔇' if self.audio_muted else '🔊'
+        
+        # Save preference
+        cfg = load_config()
+        cfg['audio_muted'] = self.audio_muted
+        save_config(cfg)
 
     def _on_touch(self, window, touch):
-        """Toggle info overlay on tap"""
+        """Toggle info overlay on tap (but not on mute button)"""
+        # Record activity for screen sleep
+        self._record_activity()
+        
+        # Wake screen if asleep (don't process tap further)
+        if self.screen_asleep:
+            self._wake_screen()
+            return True
+        
+        # Check if touch is on mute button - if so, don't toggle overlay
+        if self.mute_btn.collide_point(*touch.pos):
+            return False  # Let button handle it
+        
         if self.info_visible:
             # Hide overlay
             self.info_overlay.opacity = 0
@@ -602,6 +816,65 @@ class PreviewRoot(FloatLayout):
         # Update CPU metrics (bottom corners)
         self.cpu_temp_label.text = self._get_cpu_temp()
         self.cpu_usage_label.text = self._get_cpu_usage()
+        
+        # Check screen sleep timeout
+        self._check_screen_sleep()
+
+    def _record_activity(self):
+        """Record user/network activity to reset sleep timer"""
+        self.last_activity_time = time.time()
+
+    def _on_stream_start(self):
+        """Called when streaming starts - wake screen and record activity"""
+        self._record_activity()
+        if self.screen_asleep:
+            self._wake_screen()
+
+    def _check_screen_sleep(self):
+        """Check if screen should sleep due to inactivity"""
+        if self.screen_asleep:
+            return
+        
+        # Don't sleep if streaming
+        if self.ff.is_running():
+            self._record_activity()
+            return
+        
+        # Check timeout
+        idle_time = time.time() - self.last_activity_time
+        if idle_time >= SCREEN_SLEEP_TIMEOUT:
+            self._sleep_screen()
+
+    def _sleep_screen(self):
+        """Turn off the display to save power"""
+        if self.screen_asleep:
+            return
+        
+        self.screen_asleep = True
+        print("Screen sleeping due to inactivity")
+        
+        # Turn off display using xset (works on Pi with X11)
+        try:
+            subprocess.run(['xset', 'dpms', 'force', 'off'], 
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            print(f"Failed to sleep screen: {e}")
+
+    def _wake_screen(self):
+        """Turn on the display"""
+        if not self.screen_asleep:
+            return
+        
+        self.screen_asleep = False
+        self.last_activity_time = time.time()
+        print("Screen waking up")
+        
+        # Turn on display using xset
+        try:
+            subprocess.run(['xset', 'dpms', 'force', 'on'],
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            print(f"Failed to wake screen: {e}")
 
 
 class TouchStreamApp(App):
@@ -625,6 +898,8 @@ class TouchStreamApp(App):
             self.root.gst.stop()
         if hasattr(self.root, 'ff') and self.root.ff:
             self.root.ff.stop()
+        if hasattr(self.root, 'audio') and self.root.audio:
+            self.root.audio.stop()
 
 
 # ---- main ----

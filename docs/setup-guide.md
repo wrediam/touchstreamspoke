@@ -36,7 +36,7 @@ sudo apt-get install -y python3-kivy python3-gi python3-gst-1.0 gstreamer1.0-too
 Creates `~/edid-1080p30.txt` with binary EDID data that advertises:
 - Resolution: 1920x1080 @ 30Hz
 - Timing: CVT standard
-- Audio: Supported
+- Audio: Supported (CEA extension block with 2-channel LPCM)
 
 **Systemd Service:**
 Creates `/etc/systemd/system/tc358743-edid.service` that runs on boot:
@@ -94,7 +94,20 @@ Adds `cma=512M` to the kernel command line.
 console=serial0,115200 console=tty1 root=PARTUUID=... rootfstype=ext4 ... cma=512M
 ```
 
-### 5. Screen Driver Installation
+### 5. Nightly Reboot Schedule
+
+A cron job is configured to reboot the device at 1:00 AM local time daily:
+
+```bash
+0 1 * * * /sbin/reboot # TouchStream nightly reboot
+```
+
+**Purpose:**
+- Ensures system stability over long periods
+- Clears any accumulated memory issues
+- Applies pending system updates
+
+### 6. Screen Driver Installation
 
 **Driver:** MHS35 (3.5" SPI touchscreen)
 
@@ -112,6 +125,8 @@ console=serial0,115200 console=tty1 root=PARTUUID=... rootfstype=ext4 ... cma=51
 - Touch input functional
 - TouchStream app auto-starts
 - Capture card ready for input
+- Audio monitoring active with local playback
+- Screen sleep enabled (3 hours timeout)
 
 ## Hardware Requirements
 

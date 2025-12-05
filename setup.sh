@@ -34,17 +34,25 @@ sudo apt-get install -y python3-kivy python3-gi python3-gst-1.0 gstreamer1.0-too
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly gstreamer1.0-libav v4l-utils ffmpeg
 
-# 2. Setup 1080p30 EDID for capture card (TRUE 30Hz with correct pixel clock)
+# 2. Setup 1080p30 EDID for capture card (with CEA extension for audio support)
 echo "Setting up TC358743 EDID service..."
 cat <<EOF > $USER_HOME/edid-1080p30.txt
 00 FF FF FF FF FF FF 00 52 62 88 88 00 88 88 88
 FF 1C 01 03 80 50 2D 78 0A 0D C9 A0 57 47 98 27
-12 48 4C 00 00 00 01 01 01 01 01 01 01 01 01 01
+12 48 4C 21 08 00 01 01 01 01 01 01 01 01 01 01
 01 01 01 01 01 01 8C 1B 80 A0 70 38 1F 40 30 20
 35 00 00 00 00 00 00 1E 00 00 00 FC 00 54 6F 75
 63 68 53 74 72 65 61 6D 0A 20 00 00 00 FD 00 0F
 1E 11 44 0F 00 0A 20 20 20 20 20 20 00 00 00 FF
-00 54 53 50 4F 4B 45 30 30 31 0A 20 20 20 00 B0
+00 54 53 50 4F 4B 45 30 30 31 0A 20 20 20 01 B9
+02 03 1D F1 4A 90 04 03 01 14 12 05 1F 10 13 23
+09 07 07 83 01 00 00 65 03 0C 00 10 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 8F
 EOF
 chown $ACTUAL_USER:$ACTUAL_USER $USER_HOME/edid-1080p30.txt
 
@@ -121,11 +129,15 @@ Comment=Set display DPI for smaller UI
 EOF
 chown -R $ACTUAL_USER:$ACTUAL_USER $USER_HOME/.config/autostart
 
-# 4. Note: config.txt and cmdline.txt updates happen AFTER screen driver installation
+# 4. Setup nightly reboot at 1am local time
+echo "Setting up nightly reboot cron job..."
+(crontab -l 2>/dev/null | grep -v "reboot.*nightly"; echo "0 1 * * * /sbin/reboot # TouchStream nightly reboot") | sudo crontab -
+
+# 5. Note: config.txt and cmdline.txt updates happen AFTER screen driver installation
 # This is handled by the automatic completion service to prevent the screen driver from overwriting our changes
 echo "Boot configuration will be updated after screen driver installation..."
 
-# 5. Create automatic post-reboot completion script and service
+# 6. Create automatic post-reboot completion script and service
 echo "Creating automatic post-reboot completion service..."
 
 # Create the completion script

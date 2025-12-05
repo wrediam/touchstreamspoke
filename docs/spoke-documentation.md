@@ -50,6 +50,8 @@ HDMI Source → TC358743 Capture Card → Raspberry Pi CSI-2 Port
 **Audio Capture:**
 - Device: `hw:2,0` (ALSA, from TC358743)
 - Embedded HDMI audio extraction
+- Local playback with mute control
+- Real-time stereo level metering
 
 ### 2. Preview System (GStreamer)
 
@@ -193,7 +195,8 @@ Response:
   "video_bitrate": "4000k",
   "audio_bitrate": "128k",
   "resolution": "1920x1080",
-  "framerate": "30"
+  "framerate": "30",
+  "audio_muted": false
 }
 ```
 
@@ -232,8 +235,17 @@ Response:
 - **Video Preview**: Live scaled video feed (480x270)
 - **No Signal Overlay**: Shown when FPS < 1
 
+#### Left Side
+- **Stereo Audio Meter**: Vertical bars showing L/R audio levels
+  - Green: Normal levels (< -30dB)
+  - Yellow: Medium levels (-30dB to -12dB)
+  - Red: High levels (> -12dB)
+
 #### Bottom Bar (0-8% height)
-- **Tap Hint**: "Tap for info" instruction
+- **CPU Temp** (left): Current CPU temperature
+- **Mute Button**: 🔊/🔇 toggle for local audio playback
+- **Tap Hint** (center): "Tap for info" instruction
+- **CPU Usage** (right): Current CPU percentage
 
 #### Info Overlay (Tap to toggle)
 Shows when screen is tapped:
@@ -243,7 +255,8 @@ Shows when screen is tapped:
 
 **Touch Interaction:**
 - Single tap anywhere toggles info overlay
-- No other controls (kiosk mode)
+- Tap mute button to toggle local audio playback
+- First tap wakes screen if asleep
 
 ### 7. Device States
 
@@ -265,6 +278,34 @@ Shows when screen is tapped:
 │                 │ Status: "Streaming"
 └─────────────────┘
 ```
+
+### 8. Screen Sleep
+
+The display automatically sleeps after 3 hours of inactivity to save power.
+
+**Sleep Triggers:**
+- No touch input for 3 hours
+- No active streaming
+
+**Wake Triggers:**
+- Any touch on the screen
+- Streaming starts (via /adopt endpoint)
+
+**Implementation:**
+- Uses `xset dpms force off/on` for display control
+- Configurable timeout: `SCREEN_SLEEP_TIMEOUT` constant
+
+### 9. Nightly Reboot
+
+The device automatically reboots at 1:00 AM local time daily for system health.
+
+**Purpose:**
+- Clear memory leaks
+- Apply pending updates
+- Ensure long-term stability
+
+**Implementation:**
+- Cron job: `0 1 * * * /sbin/reboot`
 
 ## Performance Characteristics
 
@@ -444,9 +485,8 @@ arecord -l
 2. **No Authentication**: Discovery endpoints are open
 3. **Single Stream**: Can only stream to one destination
 4. **No Recording**: No local storage of video
-5. **No Audio Monitoring**: No way to hear audio locally
-6. **No Stream Health Metrics**: No bitrate/quality reporting
-7. **No Auto-Recovery**: FFmpeg crashes require manual restart via /adopt
+5. **No Stream Health Metrics**: No bitrate/quality reporting
+6. **No Auto-Recovery**: FFmpeg crashes require manual restart via /adopt
 
 ## Future Enhancements
 
@@ -456,5 +496,4 @@ arecord -l
 - Auto-restart on stream failure
 - Web-based configuration UI
 - Support for multiple resolutions
-- Audio level metering
 - Network bandwidth adaptation
