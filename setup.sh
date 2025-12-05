@@ -34,17 +34,17 @@ sudo apt-get install -y python3-kivy python3-gi python3-gst-1.0 gstreamer1.0-too
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly gstreamer1.0-libav v4l-utils ffmpeg
 
-# 2. Setup 1080p30 EDID for capture card (strict 30Hz only)
+# 2. Setup 1080p30 EDID for capture card (TRUE 30Hz with correct pixel clock)
 echo "Setting up TC358743 EDID service..."
 cat <<EOF > $USER_HOME/edid-1080p30.txt
 00 FF FF FF FF FF FF 00 52 62 88 88 00 88 88 88
 FF 1C 01 03 80 50 2D 78 0A 0D C9 A0 57 47 98 27
 12 48 4C 00 00 00 01 01 01 01 01 01 01 01 01 01
-01 01 01 01 01 01 1A 36 80 A0 70 38 1F 40 30 20
+01 01 01 01 01 01 8C 1B 80 A0 70 38 1F 40 30 20
 35 00 00 00 00 00 00 1E 00 00 00 FC 00 54 6F 75
-63 68 53 74 72 65 61 6D 0A 20 00 00 00 FD 00 1E
+63 68 53 74 72 65 61 6D 0A 20 00 00 00 FD 00 0F
 1E 11 44 0F 00 0A 20 20 20 20 20 20 00 00 00 FF
-00 54 53 50 4F 4B 45 30 30 31 0A 20 20 20 00 A8
+00 54 53 50 4F 4B 45 30 30 31 0A 20 20 20 00 B0
 EOF
 chown $ACTUAL_USER:$ACTUAL_USER $USER_HOME/edid-1080p30.txt
 
