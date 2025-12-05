@@ -317,32 +317,26 @@ class GstPreview:
             print("GStreamer preview stopped")
 
 
-# ---- Audio Monitor (captures HDMI audio, plays locally, provides levels) ----
+# ---- Audio Monitor (captures HDMI audio for level metering only) ----
 class AudioMonitor:
     def __init__(self, on_level_callback):
         self.on_level = on_level_callback
         self.pipeline = None
         self.running = False
-        self.muted = False
-        self.volume_element = None
         if not GST_OK:
             raise RuntimeError("GStreamer not available")
 
     def build_pipeline(self):
-        # Capture from ALSA, analyze levels, play to default output
+        # Capture from ALSA, analyze levels, discard audio (no speaker on Pi)
         # level element provides RMS/peak levels for metering
         pipeline_str = (
             f"alsasrc device={AUDIO_DEVICE} ! "
             "audioconvert ! "
             "level name=level interval=50000000 ! "  # 50ms intervals
-            "volume name=vol ! "
-            "autoaudiosink"
+            "fakesink"  # Discard audio - no speaker on Pi
         )
         print(f"Building audio pipeline: {pipeline_str}")
         self.pipeline = Gst.parse_launch(pipeline_str)
-        
-        # Get volume element for mute control
-        self.volume_element = self.pipeline.get_by_name('vol')
         
         # Connect to bus for level messages
         bus = self.pipeline.get_bus()
@@ -391,14 +385,7 @@ class AudioMonitor:
         if self.pipeline:
             self.pipeline.set_state(Gst.State.NULL)
             self.pipeline = None
-            self.volume_element = None
             print("Audio monitor stopped")
-
-    def set_mute(self, muted):
-        self.muted = muted
-        if self.volume_element:
-            self.volume_element.set_property('mute', muted)
-            print(f"Audio {'muted' if muted else 'unmuted'}")
 
 
 # ---- Stereo Level Meter Widget ----
@@ -534,26 +521,12 @@ class PreviewRoot(FloatLayout):
         self.cpu_temp_label.bind(size=self.cpu_temp_label.setter('text_size'))
         self.add_widget(self.cpu_temp_label)
         
-        # Mute label (simple text, no button styling)
-        self.audio_muted = self.cfg.get('audio_muted', False)
-        self.mute_btn = Label(
-            text='muted' if self.audio_muted else 'unmute',
-            font_size='12sp',
-            size_hint=(0.15, 0.08),
-            pos_hint={'x': 0.17, 'y': 0.0},
-            halign='center',
-            valign='middle',
-            color=(1, 1, 1, 0.6)
-        )
-        self.mute_btn.bind(size=self.mute_btn.setter('text_size'))
-        self.add_widget(self.mute_btn)
-        
-        # Tap hint (center)
+        # Tap hint (center - expanded now that mute is removed)
         self.tap_hint = Label(
             text='Tap for info',
             font_size='14sp',
-            size_hint=(0.38, 0.08),
-            pos_hint={'x': 0.31, 'y': 0.0},
+            size_hint=(0.66, 0.08),
+            pos_hint={'x': 0.17, 'y': 0.0},
             halign='center',
             valign='middle',
             color=(1, 1, 1, 0.6)
@@ -610,14 +583,10 @@ class PreviewRoot(FloatLayout):
                 print("Failed to start GstPreview:", e)
                 self.no_signal_label.text = f"Error: {e}"
             
-            # Start audio monitor
+            # Start audio monitor (level metering only, no playback)
             try:
                 self.audio = AudioMonitor(self.on_audio_level)
-                if self.audio.start():
-                    # Apply saved mute state
-                    if self.audio_muted:
-                        self.audio.set_mute(True)
-                        self.mute_btn.text = '🔇'
+                self.audio.start()
             except Exception as e:
                 print("Failed to start AudioMonitor:", e)
 
@@ -674,33 +643,14 @@ class PreviewRoot(FloatLayout):
         if levels is not None:
             self.audio_meter.set_levels(levels[0], levels[1])
 
-    def _toggle_mute(self):
-        """Toggle audio mute state"""
-        self.audio_muted = not self.audio_muted
-        if self.audio:
-            self.audio.set_mute(self.audio_muted)
-        
-        # Update label text
-        self.mute_btn.text = 'muted' if self.audio_muted else 'unmute'
-        
-        # Save preference
-        cfg = load_config()
-        cfg['audio_muted'] = self.audio_muted
-        save_config(cfg)
-
     def _on_touch(self, window, touch):
-        """Toggle info overlay on tap, or toggle mute if tapping mute label"""
+        """Toggle info overlay on tap"""
         # Record activity for screen sleep
         self._record_activity()
         
         # Wake screen if asleep (don't process tap further)
         if self.screen_asleep:
             self._wake_screen()
-            return True
-        
-        # Check if touch is on mute label - toggle mute
-        if self.mute_btn.collide_point(*touch.pos):
-            self._toggle_mute()
             return True
         
         if self.info_visible:
