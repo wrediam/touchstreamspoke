@@ -59,6 +59,8 @@ Type=oneshot
 ExecStart=/usr/bin/v4l2-ctl -d /dev/v4l-subdev0 --set-edid=file=$USER_HOME/edid-1080p30.txt
 ExecStart=/bin/sleep 2
 ExecStart=-/usr/bin/v4l2-ctl -d /dev/video0 --set-dv-bt-timings query
+ExecStart=/bin/sleep 1
+ExecStart=-/usr/bin/v4l2-ctl -d /dev/video0 --set-fmt-video=width=1920,height=1080,pixelformat=UYVY
 RemainAfterExit=yes
 
 [Install]

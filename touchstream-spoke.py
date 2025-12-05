@@ -66,7 +66,7 @@ PREVIEW_FPS = 30  # Preview at 30fps to save CPU
 # Capture resolution (full quality for streaming)
 CAPTURE_WIDTH = 1920
 CAPTURE_HEIGHT = 1080
-CAPTURE_FPS = 60  # Auto-detect from source, typically 30 or 60
+CAPTURE_FPS = 30  # Strict 30fps only
 
 DEFAULT_CONFIG = {
     'device_id': None,
@@ -253,13 +253,11 @@ class GstPreview:
             raise RuntimeError("GStreamer not available")
 
     def build_pipeline(self):
-        # AGGRESSIVELY OPTIMIZED: Small preview, minimal buffering, fast conversion
-        # colorimetry=bt601 is required by the capture card
-        # Explicitly set framerate to match source (60fps from Mac)
-        # appsink drops frames naturally to ~30fps for display
+        # STRICT 30fps pipeline with proper colorimetry
+        # Force device to 30fps, bt601 colorimetry required by TC358743
         pipeline_str = (
             f"v4l2src device={VIDEO_DEVICE} ! "
-            f"video/x-raw,format=UYVY,width={CAPTURE_WIDTH},height={CAPTURE_HEIGHT},framerate=60/1,colorimetry=bt601 ! "
+            f"video/x-raw,format=UYVY,width={CAPTURE_WIDTH},height={CAPTURE_HEIGHT},framerate={CAPTURE_FPS}/1,colorimetry=bt601 ! "
             "videoscale add-borders=false ! "
             f"video/x-raw,width={PREVIEW_WIDTH},height={PREVIEW_HEIGHT} ! "
             "videoconvert n-threads=4 ! video/x-raw,format=RGB ! "
@@ -286,7 +284,7 @@ class GstPreview:
             print("Failed to start pipeline!")
             return False
         self.running = True
-        print(f"GStreamer preview started ({PREVIEW_WIDTH}x{PREVIEW_HEIGHT} @ {PREVIEW_FPS}fps preview, {CAPTURE_FPS}fps capture)")
+        print(f"GStreamer preview started ({PREVIEW_WIDTH}x{PREVIEW_HEIGHT} @ {CAPTURE_FPS}fps)")
         return True
 
     def stop(self):
