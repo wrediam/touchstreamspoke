@@ -14,7 +14,7 @@ echo "Filesystem will expand on next reboot"
 
 # 1. Install Dependencies
 echo "Installing dependencies..."
-sudo apt-get update
+sudo apt-get update && sudo apt-get upgrade -y
 sudo apt-get install -y python3-kivy python3-gi python3-gst-1.0 gstreamer1.0-tools \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly gstreamer1.0-libav v4l-utils ffmpeg
