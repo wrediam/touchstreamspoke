@@ -116,7 +116,7 @@ Host: 192.168.1.100:6077
 |-------|------|-------------|-----------------|
 | `device_id` | string | Unique device identifier | UUID or `"unadopted"` |
 | `device_name` | string | Device name | Any string |
-| `ip` | string | Client IP address (from request) | IPv4 address |
+| `ip` | string | Device's IP address on the network | IPv4 address |
 | `model` | string | Device model identifier | `"raspberry-pi"` |
 | `status` | string | Device operational status | `"ready"` |
 
@@ -130,7 +130,7 @@ curl http://192.168.1.100:6077/info
 {
   "device_id": "unadopted",
   "device_name": "raspberrypi",
-  "ip": "192.168.1.50",
+  "ip": "192.168.1.100",
   "model": "raspberry-pi",
   "status": "ready"
 }

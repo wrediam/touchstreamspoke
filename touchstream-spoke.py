@@ -126,7 +126,7 @@ class DiscoveryHandler(BaseHTTPRequestHandler):
             data = {
                 'device_id': cfg.get('device_id') or 'unadopted',
                 'device_name': cfg.get('device_name'),
-                'ip': self.client_address[0],
+                'ip': self._get_device_ip(),
                 'model': 'raspberry-pi',
                 'status': 'ready'
             }
@@ -134,6 +134,17 @@ class DiscoveryHandler(BaseHTTPRequestHandler):
             return
         self.send_response(404)
         self.end_headers()
+    
+    def _get_device_ip(self):
+        """Get the device's own IP address"""
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "Unknown"
 
     def do_POST(self):
         if self.path == '/adopt':
