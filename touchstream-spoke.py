@@ -350,18 +350,30 @@ class AudioMonitor:
         bus.connect('message::element', self._on_level_message)
 
     def _on_level_message(self, bus, message):
-        if message.get_structure().get_name() == 'level':
+        struct = message.get_structure()
+        if struct and struct.get_name() == 'level':
             # Extract RMS levels for left and right channels
-            rms = message.get_structure().get_value('rms')
-            if rms and len(rms) >= 2:
-                # Convert from dB to linear (0-1 range)
-                # RMS is in dB, typically -60 to 0
-                left_db = rms[0]
-                right_db = rms[1]
-                # Clamp and normalize: -60dB = 0, 0dB = 1
-                left = max(0, min(1, (left_db + 60) / 60))
-                right = max(0, min(1, (right_db + 60) / 60))
-                self.on_level(left, right)
+            # GStreamer returns levels as GValueArray, need to handle properly
+            try:
+                rms = struct.get_value('rms')
+                if rms:
+                    # Handle both list and single value cases
+                    if hasattr(rms, '__len__') and len(rms) >= 2:
+                        left_db = float(rms[0])
+                        right_db = float(rms[1])
+                    elif hasattr(rms, '__len__') and len(rms) >= 1:
+                        left_db = right_db = float(rms[0])  # Mono
+                    else:
+                        left_db = right_db = float(rms)
+                    
+                    # Convert from dB to linear (0-1 range)
+                    # RMS is in dB, typically -60 to 0
+                    # Clamp and normalize: -60dB = 0, 0dB = 1
+                    left = max(0, min(1, (left_db + 60) / 60))
+                    right = max(0, min(1, (right_db + 60) / 60))
+                    self.on_level(left, right)
+            except Exception as e:
+                print(f"Audio level parse error: {e}")
 
     def start(self):
         if not self.pipeline:
@@ -395,23 +407,20 @@ class StereoMeter(Widget):
         super().__init__(**kwargs)
         self.left_level = 0
         self.right_level = 0
-        self.bar_width = 8  # Width of each bar
-        self.bar_gap = 2    # Gap between bars
+        self.bar_width = 4  # 4px wide each bar
+        self.bar_gap = 1    # 1px gap between bars
         self.bind(pos=self._update_canvas, size=self._update_canvas)
         self._update_canvas()
 
     def _update_canvas(self, *args):
         self.canvas.clear()
         with self.canvas:
-            # Background (dark)
-            Color(0.15, 0.15, 0.15, 0.8)
-            Rectangle(pos=self.pos, size=self.size)
-            
-            # Calculate bar dimensions
-            bar_height = self.height - 4  # 2px padding top/bottom
-            left_x = self.x + 2
-            right_x = self.x + 2 + self.bar_width + self.bar_gap
-            bar_y = self.y + 2
+            # No background - just the bars flush against edge
+            # Calculate bar dimensions - full height, no padding
+            bar_height = self.height
+            left_x = self.x
+            right_x = self.x + self.bar_width + self.bar_gap
+            bar_y = self.y
             
             # Left channel (green gradient based on level)
             left_h = bar_height * self.left_level
@@ -503,11 +512,11 @@ class PreviewRoot(FloatLayout):
         self.fps_label.bind(size=self.fps_label.setter('text_size'))
         self.add_widget(self.fps_label)
 
-        # ---- LEFT SIDE: Stereo Audio Meter ----
+        # ---- LEFT SIDE: Stereo Audio Meter (flush left, full video height) ----
         self.audio_meter = StereoMeter(
-            size_hint=(None, 0.25),
-            width=24,  # 8+2+8+2+4 = 24px wide
-            pos_hint={'x': 0.01, 'center_y': 0.5}
+            size_hint=(None, 0.84),  # Match video area height (between top/bottom bars)
+            width=9,  # 4+1+4 = 9px wide total
+            pos_hint={'x': 0, 'y': 0.08}  # Flush left, above bottom bar
         )
         self.add_widget(self.audio_meter)
 
@@ -525,19 +534,19 @@ class PreviewRoot(FloatLayout):
         self.cpu_temp_label.bind(size=self.cpu_temp_label.setter('text_size'))
         self.add_widget(self.cpu_temp_label)
         
-        # Mute button (bottom bar, left of center)
-        self.mute_btn = Button(
-            text='🔊',
-            font_size='16sp',
-            size_hint=(0.12, 0.08),
-            pos_hint={'x': 0.18, 'y': 0.0},
-            background_color=(0.2, 0.2, 0.2, 0.8),
-            background_normal='',
-            color=(1, 1, 1, 1)
-        )
-        self.mute_btn.bind(on_release=self._toggle_mute)
-        self.add_widget(self.mute_btn)
+        # Mute label (simple text, no button styling)
         self.audio_muted = self.cfg.get('audio_muted', False)
+        self.mute_btn = Label(
+            text='muted' if self.audio_muted else 'unmute',
+            font_size='12sp',
+            size_hint=(0.15, 0.08),
+            pos_hint={'x': 0.17, 'y': 0.0},
+            halign='center',
+            valign='middle',
+            color=(1, 1, 1, 0.6)
+        )
+        self.mute_btn.bind(size=self.mute_btn.setter('text_size'))
+        self.add_widget(self.mute_btn)
         
         # Tap hint (center)
         self.tap_hint = Label(
@@ -665,14 +674,14 @@ class PreviewRoot(FloatLayout):
         if levels is not None:
             self.audio_meter.set_levels(levels[0], levels[1])
 
-    def _toggle_mute(self, instance):
+    def _toggle_mute(self):
         """Toggle audio mute state"""
         self.audio_muted = not self.audio_muted
         if self.audio:
             self.audio.set_mute(self.audio_muted)
         
-        # Update button text
-        self.mute_btn.text = '🔇' if self.audio_muted else '🔊'
+        # Update label text
+        self.mute_btn.text = 'muted' if self.audio_muted else 'unmute'
         
         # Save preference
         cfg = load_config()
@@ -680,7 +689,7 @@ class PreviewRoot(FloatLayout):
         save_config(cfg)
 
     def _on_touch(self, window, touch):
-        """Toggle info overlay on tap (but not on mute button)"""
+        """Toggle info overlay on tap, or toggle mute if tapping mute label"""
         # Record activity for screen sleep
         self._record_activity()
         
@@ -689,9 +698,10 @@ class PreviewRoot(FloatLayout):
             self._wake_screen()
             return True
         
-        # Check if touch is on mute button - if so, don't toggle overlay
+        # Check if touch is on mute label - toggle mute
         if self.mute_btn.collide_point(*touch.pos):
-            return False  # Let button handle it
+            self._toggle_mute()
+            return True
         
         if self.info_visible:
             # Hide overlay
