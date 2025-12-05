@@ -61,6 +61,7 @@ AUDIO_DEVICE = 'hw:2,0'  # adjust if different
 # 480x270 = 1/16th the pixels of 1080p, much faster
 PREVIEW_WIDTH = 480
 PREVIEW_HEIGHT = 270
+PREVIEW_FPS = 30  # Preview at 30fps to save CPU
 
 # Capture resolution (full quality for streaming)
 CAPTURE_WIDTH = 1920
@@ -254,10 +255,11 @@ class GstPreview:
     def build_pipeline(self):
         # AGGRESSIVELY OPTIMIZED: Small preview, minimal buffering, fast conversion
         # colorimetry=bt601 is required by the capture card
-        # Don't specify framerate - let it auto-detect from the source
+        # Capture at source framerate, but limit preview to 30fps to save CPU
         pipeline_str = (
             f"v4l2src device={VIDEO_DEVICE} ! "
             f"video/x-raw,format=UYVY,width={CAPTURE_WIDTH},height={CAPTURE_HEIGHT},colorimetry=bt601 ! "
+            f"videorate drop-only=true ! video/x-raw,framerate={PREVIEW_FPS}/1 ! "
             "videoscale add-borders=false ! "
             f"video/x-raw,width={PREVIEW_WIDTH},height={PREVIEW_HEIGHT} ! "
             "videoconvert n-threads=4 ! video/x-raw,format=RGB ! "
@@ -284,7 +286,7 @@ class GstPreview:
             print("Failed to start pipeline!")
             return False
         self.running = True
-        print(f"GStreamer preview started ({PREVIEW_WIDTH}x{PREVIEW_HEIGHT} @ {CAPTURE_FPS}fps)")
+        print(f"GStreamer preview started ({PREVIEW_WIDTH}x{PREVIEW_HEIGHT} @ {PREVIEW_FPS}fps preview, {CAPTURE_FPS}fps capture)")
         return True
 
     def stop(self):
