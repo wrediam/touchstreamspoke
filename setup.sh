@@ -119,42 +119,9 @@ Comment=Set display DPI for smaller UI
 EOF
 chown -R $ACTUAL_USER:$ACTUAL_USER $USER_HOME/.config/autostart
 
-# 4. Update config.txt
-echo "Updating /boot/firmware/config.txt..."
-CONFIG_FILE="/boot/firmware/config.txt"
-
-# Function to safely update config
-update_config() {
-    key="$1"
-    value="$2"
-    if grep -q "^$key" "$CONFIG_FILE"; then
-        sudo sed -i "s|^$key.*|$key=$value|" "$CONFIG_FILE"
-    else
-        echo "$key=$value" | sudo tee -a "$CONFIG_FILE" > /dev/null
-    fi
-}
-
-update_config "avoid_warnings" "1"
-update_config "camera_auto_detect" "0"
-
-# Add capture card overlays if missing
-if ! grep -q "dtoverlay=tc358743,4lane=1" "$CONFIG_FILE"; then
-    echo "dtoverlay=tc358743,4lane=1,link-frequency=297000000" | sudo tee -a "$CONFIG_FILE" > /dev/null
-fi
-if ! grep -q "dtoverlay=tc358743-audio" "$CONFIG_FILE"; then
-    echo "dtoverlay=tc358743-audio" | sudo tee -a "$CONFIG_FILE" > /dev/null
-fi
-
-# Update CMA to 512MB in cmdline.txt
-echo "Updating CMA in /boot/firmware/cmdline.txt..."
-CMDLINE_FILE="/boot/firmware/cmdline.txt"
-if ! grep -q "cma=512M" "$CMDLINE_FILE"; then
-    # Add cma=512M to the end of the first line
-    sudo sed -i '1s/$/ cma=512M/' "$CMDLINE_FILE"
-    echo "Added cma=512M to cmdline.txt"
-else
-    echo "cma=512M already present in cmdline.txt"
-fi
+# 4. Note: config.txt and cmdline.txt updates happen AFTER screen driver installation
+# This is handled by the automatic completion service to prevent the screen driver from overwriting our changes
+echo "Boot configuration will be updated after screen driver installation..."
 
 # 5. Create automatic post-reboot completion script and service
 echo "Creating automatic post-reboot completion service..."
@@ -166,6 +133,16 @@ cat > $SCRIPT_DIR/complete-setup.sh << 'EOFSCRIPT'
 set -e
 
 echo "Completing TouchStream setup after screen driver installation..."
+
+# Update CMA to 512MB in cmdline.txt (if not already set)
+echo "Updating CMA in /boot/firmware/cmdline.txt..."
+CMDLINE_FILE="/boot/firmware/cmdline.txt"
+if ! grep -q "cma=512M" "$CMDLINE_FILE"; then
+    sed -i '1s/$/ cma=512M/' "$CMDLINE_FILE"
+    echo "✓ Added cma=512M to cmdline.txt"
+else
+    echo "✓ cma=512M already present in cmdline.txt"
+fi
 
 # Add TC358743 configuration to config.txt
 echo "Adding TC358743 HDMI capture card configuration..."
@@ -183,6 +160,7 @@ echo "✓ TC358743 configuration added"
 # Disable this service so it only runs once
 systemctl disable touchstream-complete-setup.service
 
+echo ""
 echo "Setup complete! Rebooting to load capture card drivers..."
 sleep 3
 reboot
