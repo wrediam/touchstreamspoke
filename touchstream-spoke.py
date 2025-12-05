@@ -366,18 +366,45 @@ class PreviewRoot(FloatLayout):
         self.fps_label.bind(size=self.fps_label.setter('text_size'))
         self.add_widget(self.fps_label)
 
-        # ---- BOTTOM BAR (25px, centered with edge padding) ----
+        # ---- BOTTOM BAR (25px, with edge padding) ----
+        # CPU temp label (bottom left)
+        self.cpu_temp_label = Label(
+            text='--°C',
+            font_size='12sp',
+            size_hint=(0.2, 0.08),
+            pos_hint={'x': 0.02, 'y': 0.0},
+            halign='left',
+            valign='middle',
+            color=(1, 1, 1, 0.6)
+        )
+        self.cpu_temp_label.bind(size=self.cpu_temp_label.setter('text_size'))
+        self.add_widget(self.cpu_temp_label)
+        
+        # Tap hint (center)
         self.tap_hint = Label(
             text='Tap for info',
             font_size='14sp',
-            size_hint=(0.9, 0.08),
-            pos_hint={'x': 0.05, 'y': 0.0},
+            size_hint=(0.56, 0.08),
+            pos_hint={'x': 0.22, 'y': 0.0},
             halign='center',
             valign='middle',
             color=(1, 1, 1, 0.6)
         )
         self.tap_hint.bind(size=self.tap_hint.setter('text_size'))
         self.add_widget(self.tap_hint)
+        
+        # CPU usage label (bottom right)
+        self.cpu_usage_label = Label(
+            text='--%%',
+            font_size='12sp',
+            size_hint=(0.2, 0.08),
+            pos_hint={'x': 0.78, 'y': 0.0},
+            halign='right',
+            valign='middle',
+            color=(1, 1, 1, 0.6)
+        )
+        self.cpu_usage_label.bind(size=self.cpu_usage_label.setter('text_size'))
+        self.add_widget(self.cpu_usage_label)
 
         # ---- INFO OVERLAY (hidden by default, simpler implementation) ----
         # Use a Label with markup for the overlay instead of canvas drawing
@@ -510,6 +537,43 @@ class PreviewRoot(FloatLayout):
             return "Streaming"
         
         return "Standby"
+    
+    def _get_cpu_temp(self):
+        """Get CPU temperature in Celsius (low overhead)"""
+        try:
+            with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
+                temp = int(f.read().strip()) / 1000.0
+                return f"{temp:.0f}°C"
+        except Exception:
+            return "--°C"
+    
+    def _get_cpu_usage(self):
+        """Get CPU usage percentage (cached, low overhead)"""
+        try:
+            # Read /proc/stat for CPU times (very fast)
+            with open('/proc/stat', 'r') as f:
+                line = f.readline()
+                fields = line.split()
+                # fields: cpu user nice system idle iowait irq softirq
+                idle = int(fields[4])
+                total = sum(int(x) for x in fields[1:8])
+                
+                # Calculate delta since last check
+                if hasattr(self, '_last_cpu_idle'):
+                    idle_delta = idle - self._last_cpu_idle
+                    total_delta = total - self._last_cpu_total
+                    if total_delta > 0:
+                        usage = 100.0 * (1.0 - idle_delta / total_delta)
+                        self._last_cpu_idle = idle
+                        self._last_cpu_total = total
+                        return f"{usage:.0f}%%"
+                
+                # First run, just store values
+                self._last_cpu_idle = idle
+                self._last_cpu_total = total
+                return "--%%"
+        except Exception:
+            return "--%%"
 
     def heartbeat(self, dt):
         """Update status and FPS displays"""
@@ -534,6 +598,10 @@ class PreviewRoot(FloatLayout):
             self.fps_label.text = f"{self.fps:.0f} FPS"
         else:
             self.fps_label.text = "...waiting"
+        
+        # Update CPU metrics (bottom corners)
+        self.cpu_temp_label.text = self._get_cpu_temp()
+        self.cpu_usage_label.text = self._get_cpu_usage()
 
 
 class TouchStreamApp(App):
