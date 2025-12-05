@@ -5,7 +5,15 @@
 
 set -e
 
+# Detect home directory and script location
+USER_HOME="$HOME"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CURRENT_USER="$(whoami)"
+
 echo "Starting TouchStream Setup..."
+echo "Home directory: $USER_HOME"
+echo "Script directory: $SCRIPT_DIR"
+echo "Current user: $CURRENT_USER"
 
 # 0. Expand filesystem to fill SD card
 echo "Expanding filesystem to fill disk..."
@@ -21,7 +29,7 @@ sudo apt-get install -y python3-kivy python3-gi python3-gst-1.0 gstreamer1.0-too
 
 # 2. Setup 1080p30 EDID for capture card
 echo "Setting up TC358743 EDID service..."
-cat <<EOF > /home/pbc/edid-1080p30.txt
+cat <<EOF > $USER_HOME/edid-1080p30.txt
 00 FF FF FF FF FF FF 00 10 AC 00 00 00 00 00 00
 01 20 01 03 80 00 00 78 0A EE 91 A3 54 4C 99 26
 0F 50 54 00 00 00 01 01 01 01 01 01 01 01 01 01
@@ -31,7 +39,7 @@ cat <<EOF > /home/pbc/edid-1080p30.txt
 4B 0F 51 0F 00 0A 20 20 20 20 20 20 00 00 00 FF
 00 30 30 30 30 30 30 30 30 0A 20 20 20 20 00 4E
 EOF
-chown pbc:pbc /home/pbc/edid-1080p30.txt
+chown $CURRENT_USER:$CURRENT_USER $USER_HOME/edid-1080p30.txt
 
 echo "Creating systemd service for EDID..."
 sudo tee /etc/systemd/system/tc358743-edid.service > /dev/null <<EOF
@@ -41,7 +49,7 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/v4l2-ctl -d /dev/v4l-subdev0 --set-edid=file=/home/pbc/edid-1080p30.txt
+ExecStart=/usr/bin/v4l2-ctl -d /dev/v4l-subdev0 --set-edid=file=$USER_HOME/edid-1080p30.txt
 ExecStart=/bin/sleep 2
 ExecStart=-/usr/bin/v4l2-ctl -d /dev/video0 --set-dv-bt-timings query
 RemainAfterExit=yes
@@ -55,26 +63,26 @@ sudo systemctl enable tc358743-edid.service
 
 # 3. Setup TouchStream application
 echo "Setting up TouchStream application..."
-chmod +x /home/pbc/touchstream-spoke.py
+chmod +x $SCRIPT_DIR/touchstream-spoke.py
 
 echo "Creating autostart .desktop file..."
-mkdir -p /home/pbc/.config/autostart
-cat <<EOF > /home/pbc/.config/autostart/touchstream.desktop
+mkdir -p $USER_HOME/.config/autostart
+cat <<EOF > $USER_HOME/.config/autostart/touchstream.desktop
 [Desktop Entry]
 Type=Application
 Name=TouchStream
-Exec=/usr/bin/python3 /home/pbc/touchstream-spoke.py
+Exec=/usr/bin/python3 $SCRIPT_DIR/touchstream-spoke.py
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
 Comment=TouchStream Video Preview
 EOF
-chown -R pbc:pbc /home/pbc/.config/autostart
+chown -R $CURRENT_USER:$CURRENT_USER $USER_HOME/.config/autostart
 
 # Set display scaling to smallest (for better screen real estate)
 echo "Setting display scaling to smallest..."
-mkdir -p /home/pbc/.config/lxsession/LXDE-pi
-cat <<EOF > /home/pbc/.config/lxsession/LXDE-pi/desktop.conf
+mkdir -p $USER_HOME/.config/lxsession/LXDE-pi
+cat <<EOF > $USER_HOME/.config/lxsession/LXDE-pi/desktop.conf
 [GTK]
 sGtk/FontName=Sans 8
 iGtk/ToolbarStyle=3
@@ -88,11 +96,11 @@ iNet/EnableEventSounds=0
 iNet/EnableInputFeedbackSounds=0
 sGtk/ColorScheme=
 EOF
-chown -R pbc:pbc /home/pbc/.config/lxsession
+chown -R $CURRENT_USER:$CURRENT_USER $USER_HOME/.config/lxsession
 
 # Also set DPI scaling for smaller UI elements
-mkdir -p /home/pbc/.config/autostart
-cat <<EOF > /home/pbc/.config/autostart/display-scaling.desktop
+mkdir -p $USER_HOME/.config/autostart
+cat <<EOF > $USER_HOME/.config/autostart/display-scaling.desktop
 [Desktop Entry]
 Type=Application
 Name=Display Scaling
@@ -102,7 +110,7 @@ NoDisplay=true
 X-GNOME-Autostart-enabled=true
 Comment=Set display DPI for smaller UI
 EOF
-chown -R pbc:pbc /home/pbc/.config/autostart
+chown -R $CURRENT_USER:$CURRENT_USER $USER_HOME/.config/autostart
 
 # 4. Update config.txt
 echo "Updating /boot/firmware/config.txt..."
@@ -143,7 +151,7 @@ fi
 
 # 5. Install Screen Driver (Last step - reboots)
 echo "Installing MHS35 screen driver..."
-cd /home/pbc
+cd $USER_HOME
 if [ -d "LCD-show" ]; then
     echo "Removing invalid LCD-show directory..."
     sudo rm -rf LCD-show

@@ -33,7 +33,7 @@ sudo apt-get install -y python3-kivy python3-gi python3-gst-1.0 gstreamer1.0-too
 **Purpose:** Configure the HDMI capture card to accept 1080p30 input signals.
 
 **EDID File Creation:**
-Creates `/home/pbc/edid-1080p30.txt` with binary EDID data that advertises:
+Creates `~/edid-1080p30.txt` with binary EDID data that advertises:
 - Resolution: 1920x1080 @ 30Hz
 - Timing: CVT standard
 - Audio: Supported
@@ -42,7 +42,7 @@ Creates `/home/pbc/edid-1080p30.txt` with binary EDID data that advertises:
 Creates `/etc/systemd/system/tc358743-edid.service` that runs on boot:
 
 ```bash
-v4l2-ctl -d /dev/v4l-subdev0 --set-edid=file=/home/pbc/edid-1080p30.txt
+v4l2-ctl -d /dev/v4l-subdev0 --set-edid=file=~/edid-1080p30.txt
 sleep 2
 v4l2-ctl -d /dev/video0 --set-dv-bt-timings query
 ```
@@ -56,11 +56,11 @@ v4l2-ctl -d /dev/video0 --set-dv-bt-timings query
 
 **Application Permissions:**
 ```bash
-chmod +x /home/pbc/touchstream-spoke.py
+chmod +x ~/touchstreamspoke/touchstream-spoke.py
 ```
 
 **Autostart Configuration:**
-Creates `/home/pbc/.config/autostart/touchstream.desktop`:
+Creates `~/.config/autostart/touchstream.desktop`:
 - Launches `touchstream-spoke.py` on user login
 - Runs in graphical environment (X11/Wayland)
 - No user interaction required

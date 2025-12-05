@@ -7,13 +7,14 @@ TouchStream Spoke (GStreamer) — Optimized for Raspberry Pi 4 B (4GB)
  - Settings cog (top-left) to set ingest_url / device_name
  - UDP broadcast beacon + HTTP discovery server (GET /info, POST /adopt)
  - FFmpeg streamer (video+audio) via UDP/RTP (MPEG-TS) for low latency
- - Config persisted at /home/pbc/stream-config.json
+ - Config persisted at ~/stream-config.json
  - OPTIMIZED: Scaled preview, reduced latency, UDP streaming
 
 Copyright (c) 2025 Will Reeves and TouchStream Contributors
 Licensed under the MIT License - see LICENSE file for details
 """
 import os
+from pathlib import Path
 
 # Set environment for better GPU support BEFORE importing Kivy
 os.environ['KIVY_GL_BACKEND'] = 'gl'
@@ -50,7 +51,7 @@ except Exception as e:
     GST_OK = False
 
 # ---- Config and constants ----
-CONFIG_PATH = '/home/pbc/stream-config.json'
+CONFIG_PATH = str(Path.home() / 'stream-config.json')
 DISCOVERY_PORT = 6077
 DISCOVERY_UDP_PORT = 9999
 VIDEO_DEVICE = '/dev/video0'

@@ -181,7 +181,7 @@ Response:
 
 ### 5. Configuration Management
 
-**Config File:** `/home/pbc/stream-config.json`
+**Config File:** `~/stream-config.json`
 
 **Default Configuration:**
 ```json
@@ -289,8 +289,9 @@ Shows when screen is tapped:
 ## File Locations
 
 ```
-/home/pbc/
-├── touchstream-spoke.py          # Main application
+~/
+├── touchstreamspoke/
+│   └── touchstream-spoke.py      # Main application
 ├── stream-config.json            # Configuration file
 ├── edid-1080p30.txt              # EDID data for capture card
 └── .config/autostart/
@@ -377,7 +378,7 @@ ps aux | grep ffmpeg
 journalctl -u tc358743-edid.service
 
 # Application output (if run manually)
-python3 /home/pbc/touchstream-spoke.py
+python3 ~/touchstreamspoke/touchstream-spoke.py
 
 # FFmpeg output (modify spoke to enable)
 # Remove stdout=DEVNULL, stderr=DEVNULL from Popen

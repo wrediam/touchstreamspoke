@@ -230,7 +230,7 @@ curl -X POST http://192.168.1.100:6077/adopt \
 ```
 
 **Behavior:**
-- Configuration is immediately saved to `/home/pbc/stream-config.json`
+- Configuration is immediately saved to `~/stream-config.json`
 - If `ingest_url` and `stream_key` are provided, FFmpeg streaming will start automatically
 - Device will begin broadcasting new `device_id` in UDP beacons
 - Configuration persists across reboots
@@ -343,7 +343,7 @@ ffmpeg \
 
 ## Configuration File Format
 
-**Location:** `/home/pbc/stream-config.json`  
+**Location:** `~/stream-config.json` (expands to user's home directory)  
 **Format:** JSON  
 **Permissions:** 644 (readable by all, writable by owner)
 
@@ -412,7 +412,7 @@ ffmpeg \
 The configuration file can be manually edited:
 
 ```bash
-sudo nano /home/pbc/stream-config.json
+nano ~/stream-config.json
 ```
 
 **Note:** Changes take effect on next application restart or when reloaded by the beacon thread.
@@ -460,7 +460,7 @@ v4l2-ctl -d /dev/video0 --set-dv-bt-timings query
 
 ### EDID
 
-EDID is loaded from `/home/pbc/edid-1080p30.txt` on boot via systemd service.
+EDID is loaded from `~/edid-1080p30.txt` on boot via systemd service.
 
 ---
 

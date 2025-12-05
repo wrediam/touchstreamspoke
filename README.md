@@ -47,28 +47,33 @@ TouchStream Spoke transforms a Raspberry Pi into a professional video capture an
 - MHS35 3.5" SPI touchscreen
 - MicroSD card (16GB+)
 - Raspberry Pi OS (Bookworm or later)
+- Git installed (`sudo apt-get install git`)
 
-### Installation
+### One-Command Installation
 
-1. **Flash Raspberry Pi OS** to SD card and boot
+```bash
+cd ~ && git clone https://github.com/wrediam/touchstreamspoke.git && cd touchstreamspoke && sudo bash setup.sh
+```
 
-2. **Configure network** (WiFi or Ethernet)
+> See [INSTALL.md](./INSTALL.md) for detailed installation instructions and troubleshooting.
 
-3. **Copy files** to `/home/pbc/`:
+### Step-by-Step Installation
+
+1. **Clone the repository:**
    ```bash
-   scp setup.sh touchstream-spoke.py pbc@raspberrypi.local:/home/pbc/
+   cd ~
+   git clone https://github.com/wrediam/touchstreamspoke.git
+   cd touchstreamspoke
    ```
 
-4. **Run setup script:**
+2. **Run setup script:**
    ```bash
-   ssh pbc@raspberrypi.local
-   cd /home/pbc
    sudo bash setup.sh
    ```
 
-5. **Wait for automatic reboot** (triggered by screen driver installation)
+3. **System will reboot automatically** after screen driver installation
 
-6. **Device is ready** - will display "Pending Adoption" on screen
+4. **Device is ready** - will display "Pending Adoption" on screen
 
 ### Post-Installation
 
@@ -143,7 +148,7 @@ curl -X POST http://<spoke-ip>:6077/adopt \
 
 ### Manual Configuration
 
-Edit `/home/pbc/stream-config.json`:
+Edit `~/stream-config.json`:
 
 ```json
 {

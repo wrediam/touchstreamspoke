@@ -16,7 +16,7 @@ Welcome to the TouchStream documentation. This system consists of two main compo
 
 ### For Spoke Devices
 1. Flash Raspberry Pi OS to SD card
-2. Copy `setup.sh` and `touchstream-spoke.py` to `/home/pbc/`
+2. Clone the repository to your home directory
 3. Run `sudo bash setup.sh`
 4. Device will reboot and be ready for discovery
 

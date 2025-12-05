@@ -106,7 +106,7 @@ docs/
 
 1. Flash Raspberry Pi OS to SD card
 2. Configure WiFi/Ethernet
-3. Copy files to `/home/pbc/`:
+3. Clone the repository:
    - `setup.sh`
    - `touchstream-spoke.py`
 4. Run: `sudo bash setup.sh`
@@ -209,7 +209,7 @@ Edit configuration via `POST /adopt`:
 
 | File | Purpose | Documentation |
 |------|---------|---------------|
-| `/home/pbc/stream-config.json` | Runtime configuration | [API Reference](./api-reference.md#configuration-file-format) |
+| `~/stream-config.json` | Runtime configuration | [API Reference](./api-reference.md#configuration-file-format) |
 | `/boot/firmware/config.txt` | Boot configuration | [Setup Guide](./setup-guide.md#config-txt-modifications) |
 | `/boot/firmware/cmdline.txt` | Kernel parameters | [Setup Guide](./setup-guide.md#cmdline-txt-modifications) |
 | `/etc/systemd/system/tc358743-edid.service` | EDID loader | [Setup Guide](./setup-guide.md#tc358743-edid-configuration) |
