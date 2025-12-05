@@ -65,7 +65,7 @@ PREVIEW_HEIGHT = 270
 # Capture resolution (full quality for streaming)
 CAPTURE_WIDTH = 1920
 CAPTURE_HEIGHT = 1080
-CAPTURE_FPS = 30
+CAPTURE_FPS = 60  # Auto-detect from source, typically 30 or 60
 
 DEFAULT_CONFIG = {
     'device_id': None,
