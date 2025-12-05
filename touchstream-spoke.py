@@ -80,16 +80,24 @@ DEFAULT_CONFIG = {
 
 # ---- Config helpers ----
 def ensure_config():
-    d = os.path.dirname(CONFIG_PATH)
+    # Expand the path to handle ~ properly
+    config_path = os.path.expanduser(CONFIG_PATH)
+    d = os.path.dirname(config_path)
     if d and not os.path.exists(d):
         os.makedirs(d, exist_ok=True)
-    if not os.path.exists(CONFIG_PATH):
-        save_config(DEFAULT_CONFIG.copy())
+    if not os.path.exists(config_path):
+        # Write default config directly to avoid recursion
+        try:
+            with open(config_path, 'w') as f:
+                json.dump(DEFAULT_CONFIG.copy(), f, indent=2)
+        except Exception as e:
+            print("Failed to create default config:", e)
 
 def load_config():
     ensure_config()
+    config_path = os.path.expanduser(CONFIG_PATH)
     try:
-        with open(CONFIG_PATH, 'r') as f:
+        with open(config_path, 'r') as f:
             cfg = json.load(f)
     except Exception:
         cfg = DEFAULT_CONFIG.copy()
@@ -99,9 +107,9 @@ def load_config():
     return cfg
 
 def save_config(cfg):
-    ensure_config()
+    config_path = os.path.expanduser(CONFIG_PATH)
     try:
-        with open(CONFIG_PATH, 'w') as f:
+        with open(config_path, 'w') as f:
             json.dump(cfg, f, indent=2)
     except Exception as e:
         print("Failed to save config:", e)
