@@ -62,7 +62,7 @@ cd ~ && git clone https://github.com/wrediam/touchstreamspoke.git && cd touchstr
 > 
 > Total time: ~10-15 minutes with 2 automatic reboots.
 > 
-> See [INSTALL.md](./INSTALL.md) for detailed installation instructions and troubleshooting.
+> See [INSTALL.md](./docs/INSTALL.md) for detailed installation instructions and troubleshooting.
 
 ### Step-by-Step Installation
 

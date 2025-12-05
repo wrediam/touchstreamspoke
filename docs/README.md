@@ -7,6 +7,20 @@ Complete documentation for the TouchStream Spoke video capture and streaming sys
 ### [Index](./index.md)
 Overview and quick navigation to all documentation sections.
 
+### [Installation Guide](./INSTALL.md)
+**Quick installation instructions and troubleshooting**
+- One-command installation
+- Step-by-step installation
+- Remote SSH installation
+- Troubleshooting common issues
+- Update and uninstallation procedures
+
+**Read this if you're:**
+- Installing TouchStream for the first time
+- Need quick installation commands
+- Troubleshooting installation problems
+- Updating or removing the software
+
 ### [Setup Guide](./setup-guide.md)
 **Detailed breakdown of the setup process**
 - Step-by-step explanation of `setup.sh`
