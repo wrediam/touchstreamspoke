@@ -1,7 +1,16 @@
 #!/bin/bash
+# TouchStream Spoke Setup Script
+# Copyright (c) 2025 Will Reeves and TouchStream Contributors
+# Licensed under the MIT License - see LICENSE file for details
+
 set -e
 
 echo "Starting TouchStream Setup..."
+
+# 0. Expand filesystem to fill SD card
+echo "Expanding filesystem to fill disk..."
+sudo raspi-config --expand-rootfs
+echo "Filesystem will expand on next reboot"
 
 # 1. Install Dependencies
 echo "Installing dependencies..."
@@ -59,6 +68,39 @@ Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
 Comment=TouchStream Video Preview
+EOF
+chown -R pbc:pbc /home/pbc/.config/autostart
+
+# Set display scaling to smallest (for better screen real estate)
+echo "Setting display scaling to smallest..."
+mkdir -p /home/pbc/.config/lxsession/LXDE-pi
+cat <<EOF > /home/pbc/.config/lxsession/LXDE-pi/desktop.conf
+[GTK]
+sGtk/FontName=Sans 8
+iGtk/ToolbarStyle=3
+iGtk/ToolbarIconSize=1
+iGtk/ButtonImages=0
+iGtk/MenuImages=0
+sGtk/CursorThemeName=PiXflat
+iXft/Antialias=1
+sXft/HintStyle=hintfull
+iNet/EnableEventSounds=0
+iNet/EnableInputFeedbackSounds=0
+sGtk/ColorScheme=
+EOF
+chown -R pbc:pbc /home/pbc/.config/lxsession
+
+# Also set DPI scaling for smaller UI elements
+mkdir -p /home/pbc/.config/autostart
+cat <<EOF > /home/pbc/.config/autostart/display-scaling.desktop
+[Desktop Entry]
+Type=Application
+Name=Display Scaling
+Exec=xrandr --dpi 96
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+Comment=Set display DPI for smaller UI
 EOF
 chown -R pbc:pbc /home/pbc/.config/autostart
 

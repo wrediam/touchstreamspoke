@@ -424,7 +424,9 @@ Contributions welcome! Please:
 
 ## License
 
-[Specify your license here]
+MIT License - see [LICENSE](./LICENSE) file for details.
+
+**TL;DR:** You can use, modify, and distribute this project freely, including for commercial purposes, as long as you include the original copyright notice and license text.
 
 ## Support
 

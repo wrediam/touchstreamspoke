@@ -9,6 +9,9 @@ TouchStream Spoke (GStreamer) — Optimized for Raspberry Pi 4 B (4GB)
  - FFmpeg streamer (video+audio) via UDP/RTP (MPEG-TS) for low latency
  - Config persisted at /home/pbc/stream-config.json
  - OPTIMIZED: Scaled preview, reduced latency, UDP streaming
+
+Copyright (c) 2025 Will Reeves and TouchStream Contributors
+Licensed under the MIT License - see LICENSE file for details
 """
 import os
 
