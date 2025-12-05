@@ -255,11 +255,10 @@ class GstPreview:
     def build_pipeline(self):
         # AGGRESSIVELY OPTIMIZED: Small preview, minimal buffering, fast conversion
         # colorimetry=bt601 is required by the capture card
-        # Capture at source framerate, but limit preview to 30fps to save CPU
+        # Use appsink's drop=true and max-buffers=1 to naturally limit to ~30fps
         pipeline_str = (
             f"v4l2src device={VIDEO_DEVICE} ! "
             f"video/x-raw,format=UYVY,width={CAPTURE_WIDTH},height={CAPTURE_HEIGHT},colorimetry=bt601 ! "
-            f"videorate drop-only=true ! video/x-raw,framerate={PREVIEW_FPS}/1 ! "
             "videoscale add-borders=false ! "
             f"video/x-raw,width={PREVIEW_WIDTH},height={PREVIEW_HEIGHT} ! "
             "videoconvert n-threads=4 ! video/x-raw,format=RGB ! "
