@@ -156,8 +156,10 @@ else
     echo "cma=512M already present in cmdline.txt"
 fi
 
-# 5. Create first-boot completion script (runs after screen driver reboot)
-echo "Creating first-boot completion script..."
+# 5. Create automatic post-reboot completion script and service
+echo "Creating automatic post-reboot completion service..."
+
+# Create the completion script
 cat > $SCRIPT_DIR/complete-setup.sh << 'EOFSCRIPT'
 #!/bin/bash
 # Complete TouchStream setup after screen driver installation
@@ -167,7 +169,7 @@ echo "Completing TouchStream setup after screen driver installation..."
 
 # Add TC358743 configuration to config.txt
 echo "Adding TC358743 HDMI capture card configuration..."
-sudo bash -c 'cat >> /boot/firmware/config.txt << EOF
+bash -c 'cat >> /boot/firmware/config.txt << EOF
 
 # TC358743 HDMI Capture Card Configuration
 avoid_warnings=1
@@ -177,24 +179,44 @@ dtoverlay=tc358743-audio
 EOF'
 
 echo "✓ TC358743 configuration added"
-echo ""
+
+# Disable this service so it only runs once
+systemctl disable touchstream-complete-setup.service
+
 echo "Setup complete! Rebooting to load capture card drivers..."
 sleep 3
-sudo reboot
+reboot
 EOFSCRIPT
 
 chmod +x $SCRIPT_DIR/complete-setup.sh
 chown $ACTUAL_USER:$ACTUAL_USER $SCRIPT_DIR/complete-setup.sh
 
+# Create systemd service to run completion script on next boot
+sudo tee /etc/systemd/system/touchstream-complete-setup.service > /dev/null <<EOF
+[Unit]
+Description=TouchStream Setup Completion (runs once after screen driver)
+After=multi-user.target
+ConditionPathExists=$SCRIPT_DIR/complete-setup.sh
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash $SCRIPT_DIR/complete-setup.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable touchstream-complete-setup.service
+
 echo ""
 echo "=========================================="
-echo "IMPORTANT: Two-Stage Installation"
+echo "Automatic Two-Stage Installation"
 echo "=========================================="
 echo "Stage 1 (current): Installing screen driver - system will reboot"
-echo "Stage 2 (after reboot): Run this command to complete setup:"
-echo ""
-echo "  cd $SCRIPT_DIR && sudo bash complete-setup.sh"
-echo ""
+echo "Stage 2 (automatic): After reboot, setup will complete automatically and reboot again"
+echo "Stage 3 (final): TouchStream will be ready!"
 echo "=========================================="
 echo ""
 sleep 5

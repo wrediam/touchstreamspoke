@@ -1,12 +1,20 @@
 # TouchStream Spoke - Quick Installation Guide
 
-## One-Command Installation
+## One-Command Installation (Fully Automatic)
 
 For a fresh Raspberry Pi with Raspberry Pi OS installed:
 
 ```bash
 cd ~ && git clone https://github.com/wrediam/touchstreamspoke.git && cd touchstreamspoke && sudo bash setup.sh
 ```
+
+**What happens:**
+1. ⚙️ Installs all dependencies
+2. 🖥️ Configures screen driver → **Reboot 1**
+3. 🎥 Adds capture card config (automatic) → **Reboot 2**
+4. ✅ TouchStream starts automatically!
+
+**Total time:** ~10-15 minutes (unattended)
 
 
 ---
@@ -51,7 +59,14 @@ The setup script will:
 - ✅ Install MHS35 screen driver
 - 🔄 **Automatically reboot**
 
-### 5. After Reboot
+### 5. After First Reboot (Automatic)
+
+The system will automatically:
+- Run the completion script
+- Add TC358743 capture card configuration
+- Reboot again
+
+### 6. After Second Reboot (Final)
 
 The TouchStream application will start automatically and display:
 - Live HDMI preview on the 3.5" screen

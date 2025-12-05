@@ -49,19 +49,18 @@ TouchStream Spoke transforms a Raspberry Pi into a professional video capture an
 - Raspberry Pi OS (Bookworm or later)
 - Git installed (`sudo apt-get install git`)
 
-### Installation (Two Stages)
+### One-Command Installation (Fully Automatic)
 
-**Stage 1:**
 ```bash
 cd ~ && git clone https://github.com/wrediam/touchstreamspoke.git && cd touchstreamspoke && sudo bash setup.sh
 ```
 
-**After first reboot, Stage 2:**
-```bash
-cd ~/touchstreamspoke && sudo bash complete-setup.sh
-```
-
-> **Note:** Two reboots are required. The screen driver installation (Stage 1) modifies config.txt, so the capture card configuration must be added after (Stage 2).
+> **Note:** Installation happens in 3 automatic stages:
+> 1. **First run:** Installs dependencies and screen driver → **auto-reboots**
+> 2. **After reboot:** Adds capture card configuration → **auto-reboots**
+> 3. **Final boot:** TouchStream starts automatically!
+> 
+> Total time: ~10-15 minutes with 2 automatic reboots.
 > 
 > See [INSTALL.md](./INSTALL.md) for detailed installation instructions and troubleshooting.
 
@@ -74,22 +73,17 @@ cd ~/touchstreamspoke && sudo bash complete-setup.sh
    cd touchstreamspoke
    ```
 
-2. **Run setup script (Stage 1):**
+2. **Run setup script:**
    ```bash
    sudo bash setup.sh
    ```
 
-3. **System will reboot automatically** after screen driver installation
+3. **Wait for automatic installation:**
+   - First reboot: Screen driver installation
+   - Second reboot: Capture card configuration (happens automatically)
+   - Final boot: TouchStream starts!
 
-4. **Complete setup (Stage 2) - IMPORTANT:**
-   After reboot, run:
-   ```bash
-   cd ~/touchstreamspoke && sudo bash complete-setup.sh
-   ```
-
-5. **System will reboot again** to load capture card drivers
-
-6. **Device is ready** - will display "Pending Adoption" on screen
+4. **Device is ready** - will display "Pending Adoption" on screen
 
 ### Post-Installation
 
