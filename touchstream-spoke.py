@@ -254,9 +254,10 @@ class GstPreview:
     def build_pipeline(self):
         # AGGRESSIVELY OPTIMIZED: Small preview, minimal buffering, fast conversion
         # colorimetry=bt601 is required by the capture card
+        # Don't specify framerate - let it auto-detect from the source
         pipeline_str = (
             f"v4l2src device={VIDEO_DEVICE} ! "
-            f"video/x-raw,format=UYVY,width={CAPTURE_WIDTH},height={CAPTURE_HEIGHT},colorimetry=bt601,framerate={CAPTURE_FPS}/1 ! "
+            f"video/x-raw,format=UYVY,width={CAPTURE_WIDTH},height={CAPTURE_HEIGHT},colorimetry=bt601 ! "
             "videoscale add-borders=false ! "
             f"video/x-raw,width={PREVIEW_WIDTH},height={PREVIEW_HEIGHT} ! "
             "videoconvert n-threads=4 ! video/x-raw,format=RGB ! "
