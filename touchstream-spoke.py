@@ -166,6 +166,17 @@ class DiscoveryHandler(BaseHTTPRequestHandler):
                 resp = {'status': 'error', 'error': str(e)}
             self._send_json(resp)
             return
+
+        if self.path == '/shutdown':
+            self._send_json({'status': 'shutdown_initiated'})
+            threading.Thread(target=lambda: (time.sleep(1), os.system('sudo shutdown -h now'))).start()
+            return
+            
+        if self.path == '/reboot':
+            self._send_json({'status': 'reboot_initiated'})
+            threading.Thread(target=lambda: (time.sleep(1), os.system('sudo reboot'))).start()
+            return
+
         self.send_response(404)
         self.end_headers()
 
