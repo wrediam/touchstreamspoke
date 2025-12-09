@@ -3,6 +3,9 @@
 # Copyright (c) 2025 Will Reeves and TouchStream Contributors
 # Licensed under the MIT License - see LICENSE file for details
 
+# set the version number
+VERSION="1.2"
+
 set -e
 
 # Detect home directory and script location
@@ -21,6 +24,7 @@ echo "Starting TouchStream Setup..."
 echo "Actual user: $ACTUAL_USER"
 echo "Home directory: $USER_HOME"
 echo "Script directory: $SCRIPT_DIR"
+echo "Version: $VERSION"
 
 # Check for existing installation
 if [ -f "$SCRIPT_DIR/touchstream-spoke.py" ]; then
@@ -47,18 +51,15 @@ if [ -f "$SCRIPT_DIR/touchstream-spoke.py" ]; then
             echo "Stopping running instances..."
             pkill -f touchstream-spoke.py || true
             
-            # Prompt to restart
+            # Restart application
             echo ""
-            echo "Update complete."
-            echo "You can either reboot the device or start the application manually."
-            read -p "Reboot now? (y/n): " REBOOT_CHOICE
-            if [[ $REBOOT_CHOICE =~ ^[Yy]$ ]]; then
-                sudo reboot
-                exit 0
-            else
-                echo "Exiting. To start manually: nohup python3 $SCRIPT_DIR/touchstream-spoke.py &"
-                exit 0
-            fi
+            echo "Update complete. Restarting application..."
+            echo "Note: If the application does not appear, you may need to reboot manually."
+            
+            # Restart as the actual user on the display
+            su - $ACTUAL_USER -c "export DISPLAY=:0 && nohup python3 $SCRIPT_DIR/touchstream-spoke.py > /dev/null 2>&1 &"
+            
+            exit 0
             ;;
         3)
             echo "Exiting."

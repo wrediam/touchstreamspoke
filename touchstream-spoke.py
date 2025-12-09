@@ -72,7 +72,9 @@ CAPTURE_HEIGHT = 1080
 CAPTURE_FPS = 30  # Strict 30fps only
 
 # Screen sleep settings
-SCREEN_SLEEP_TIMEOUT = 3 * 60 * 60  # 3 hours in seconds
+SCREEN_SLEEP_TIMEOUT = 3 * 3600  # 3 hours in seconds
+
+VERSION = "1.2"
 
 DEFAULT_CONFIG = {
     'device_id': None,
@@ -731,7 +733,8 @@ class PreviewRoot(FloatLayout):
         location = cfg.get('location') or 'Not Set'
         
         self.info_overlay.text = (
-            f"IP Address: {ip}\n\n"
+            f"IP Address: {ip}\n"
+            f"Version: {VERSION}\n\n"
             f"Status: {adoption_status}\n\n"
             f"Location: {location}"
         )

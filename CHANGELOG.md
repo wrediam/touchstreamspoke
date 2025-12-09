@@ -1,5 +1,28 @@
 # TouchStream Spoke - Changelog
 
+## Version 1.2 - Remote Management Update
+
+### New Features
+
+#### Remote Management API
+- **Added `/shutdown` endpoint:** Remotely shut down the device via HTTP POST.
+- **Added `/reboot` endpoint:** Remotely reboot the device via HTTP POST.
+- **Added `/update` endpoint:** Trigger a self-update (git pull and restart) remotely.
+
+#### Improved Setup Process
+- **Setup Script Enhancements:** `setup.sh` now detects existing installations.
+- **Update Logic:** Offers a streamlined "Update" option that pulls new code and restarts the application without a full reboot, preserving configuration.
+
+#### UI Improvements
+- **Audio Meter:** Widened audio meter bars to 10px for better visibility.
+- **Version Display:** Added version number to the "Tap for info" overlay.
+
+### Fixes
+- **Setup Script:** Fixed logic to prevent fall-through to full installation after update selection.
+- **Audio Meter:** Added debug logging to assist in diagnosing capture issues.
+
+---
+
 ## Version 1.1 - UDP/RTP Streaming Update
 
 ### Major Changes
@@ -93,12 +116,12 @@ proc = subprocess.Popen(cmd)
 
 ### Performance Improvements
 
-| Metric | RTMP (Old) | UDP (New) | Improvement |
-|--------|------------|-----------|-------------|
-| **Latency** | 2-4 seconds | 200-500ms | **75-87% reduction** |
-| **CPU Usage** | 60-80% | 55-75% | **5-10% reduction** |
-| **Network Overhead** | ~10% | ~2% | **8% reduction** |
-| **Bandwidth** | 4.5 Mbps | 4.1 Mbps | **8% reduction** |
+| Metric               | RTMP (Old)  | UDP (New) | Improvement          |
+| -------------------- | ----------- | --------- | -------------------- |
+| **Latency**          | 2-4 seconds | 200-500ms | **75-87% reduction** |
+| **CPU Usage**        | 60-80%      | 55-75%    | **5-10% reduction**  |
+| **Network Overhead** | ~10%        | ~2%       | **8% reduction**     |
+| **Bandwidth**        | 4.5 Mbps    | 4.1 Mbps  | **8% reduction**     |
 
 ### Breaking Changes
 
