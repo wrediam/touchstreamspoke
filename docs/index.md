@@ -9,7 +9,7 @@ Welcome to the TouchStream documentation. This system consists of two main compo
 
 - [Setup Guide](./setup-guide.md) - Detailed walkthrough of the setup.sh script
 - [Spoke Documentation](./spoke-documentation.md) - Complete spoke functionality reference
-- [Integration Guide](./integration-guide.md) - How to integrate spoke with discovery app
+- [Integration Guide](./integration-guide.md) - Integrating with discovery apps and remote management
 - [API Reference](./api-reference.md) - Network protocol and API endpoints
 
 ## Quick Start

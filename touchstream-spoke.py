@@ -140,34 +140,7 @@ class DiscoveryHandler(BaseHTTPRequestHandler):
                 'status': 'ready'
             }
             self._send_json(data)
-            return
-        self.send_response(404)
-        self.end_headers()
-    
-    def _get_device_ip(self):
-        """Get the device's own IP address"""
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            ip = s.getsockname()[0]
-            s.close()
-            return ip
-        except Exception:
-            return "Unknown"
-
-    def do_POST(self):
-        if self.path == '/adopt':
-            length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(length)
-            try:
-                payload = json.loads(body)
-                cfg = load_config()
-                cfg.update(payload)
-                save_config(cfg)
-                resp = {'status': 'ok', 'saved': True}
-            except Exception as e:
-                resp = {'status': 'error', 'error': str(e)}
-            self._send_json(resp)
+            self._send_json(data)
             return
 
         if self.path == '/shutdown':
@@ -200,6 +173,38 @@ class DiscoveryHandler(BaseHTTPRequestHandler):
                     print(f"Update failed: {e}")
 
             threading.Thread(target=do_update).start()
+            return
+
+        self.send_response(404)
+        self.end_headers()
+    
+    def _get_device_ip(self):
+        """Get the device's own IP address"""
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "Unknown"
+
+    def do_POST(self):
+        if self.path == '/adopt':
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length)
+            try:
+                payload = json.loads(body)
+                cfg = load_config()
+                cfg.update(payload)
+                save_config(cfg)
+                resp = {'status': 'ok', 'saved': True}
+            except Exception as e:
+                resp = {'status': 'error', 'error': str(e)}
+            self._send_json(resp)
+            return
+
+            self._send_json(resp)
             return
 
         self.send_response(404)

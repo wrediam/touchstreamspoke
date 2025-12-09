@@ -664,3 +664,30 @@ ffprobe rtmp://your-server.com/live/test_key_123
 - Monitor network bandwidth usage
 - Check CPU usage on spoke device
 - Verify RTMP server has sufficient resources
+
+## Remote Management
+
+The spoke device exposes HTTP GET endpoints for remote management. These can be integrated into your discovery app's device management UI.
+
+### Available Actions
+
+| Action       | Endpoint        | Description                                         |
+| ------------ | --------------- | --------------------------------------------------- |
+| **Reboot**   | `GET /reboot`   | Reboots the Raspberry Pi                            |
+| **Shutdown** | `GET /shutdown` | Shuts down the Raspberry Pi                         |
+| **Update**   | `GET /update`   | Pulls latest code from git and restarts the service |
+
+### Implementation Example
+
+```python
+def reboot_device(ip):
+    """Reboot a remote spoke device"""
+    try:
+        response = requests.get(f'http://{ip}:6077/reboot', timeout=5)
+        if response.status_code == 200:
+            print(f"Reboot initiated for {ip}")
+            return True
+    except Exception as e:
+        print(f"Failed to reboot {ip}: {e}")
+    return False
+```

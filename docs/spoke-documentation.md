@@ -181,6 +181,39 @@ Response:
 }
 ```
 
+{
+  "status": "ok",
+  "saved": true
+}
+```
+
+**GET /shutdown**
+Initiates a system shutdown.
+```json
+Response:
+{
+  "status": "shutdown_initiated"
+}
+```
+
+**GET /reboot**
+Initiates a system reboot.
+```json
+Response:
+{
+  "status": "reboot_initiated"
+}
+```
+
+**GET /update**
+Initiates a code update (git pull) and service restart.
+```json
+Response:
+{
+  "status": "updating"
+}
+```
+
 ### 5. Configuration Management
 
 **Config File:** `~/stream-config.json`
@@ -216,6 +249,10 @@ Response:
 - Reloaded on every beacon broadcast
 - Updated via HTTP POST /adopt
 - Survives reboots
+
+#### Maintenance
+- **Reinstall/Update**: Run `setup.sh` again to access the maintenance menu (Reinstall, Update, Exit).
+- **Remote Update**: Use the `/update` endpoint to trigger an update remotely.
 
 ### 6. User Interface (Kivy)
 

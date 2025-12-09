@@ -200,28 +200,28 @@ Response:
 
 Configure and adopt device (see Configuration section above).
 
-### POST /shutdown
+### GET /shutdown
 
 Initiates a system shutdown.
 
 ```bash
-curl -X POST http://<spoke-ip>:6077/shutdown
+curl http://<spoke-ip>:6077/shutdown
 ```
 
-### POST /reboot
+### GET /reboot
 
 Initiates a system reboot.
 
 ```bash
-curl -X POST http://<spoke-ip>:6077/reboot
+curl http://<spoke-ip>:6077/reboot
 ```
 
-### POST /update
+### GET /update
 
 Updates the application code via `git pull` and restarts the service.
 
 ```bash
-curl -X POST http://<spoke-ip>:6077/update
+curl http://<spoke-ip>:6077/update
 ```
 
 ## Network Ports

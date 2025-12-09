@@ -245,13 +245,13 @@ curl -X POST http://192.168.1.100:6077/adopt \
 
 ---
 
-#### POST /shutdown
+#### GET /shutdown
 
 Initiates a system shutdown.
 
 **Request:**
 ```http
-POST /shutdown HTTP/1.1
+GET /shutdown HTTP/1.1
 Host: 192.168.1.100:6077
 ```
 
@@ -264,18 +264,18 @@ Host: 192.168.1.100:6077
 
 **Example Request:**
 ```bash
-curl -X POST http://192.168.1.100:6077/shutdown
+curl http://192.168.1.100:6077/shutdown
 ```
 
 ---
 
-#### POST /reboot
+#### GET /reboot
 
 Initiates a system reboot.
 
 **Request:**
 ```http
-POST /reboot HTTP/1.1
+GET /reboot HTTP/1.1
 Host: 192.168.1.100:6077
 ```
 
@@ -288,18 +288,18 @@ Host: 192.168.1.100:6077
 
 **Example Request:**
 ```bash
-curl -X POST http://192.168.1.100:6077/reboot
+curl http://192.168.1.100:6077/reboot
 ```
 
 ---
 
-#### POST /update
+#### GET /update
 
 Updates the application code via `git pull` and restarts the service.
 
 **Request:**
 ```http
-POST /update HTTP/1.1
+GET /update HTTP/1.1
 Host: 192.168.1.100:6077
 ```
 
@@ -312,7 +312,7 @@ Host: 192.168.1.100:6077
 
 **Example Request:**
 ```bash
-curl -X POST http://192.168.1.100:6077/update
+curl http://192.168.1.100:6077/update
 ```
 
 ---
