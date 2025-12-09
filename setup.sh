@@ -22,6 +22,54 @@ echo "Actual user: $ACTUAL_USER"
 echo "Home directory: $USER_HOME"
 echo "Script directory: $SCRIPT_DIR"
 
+# Check for existing installation
+if [ -f "$SCRIPT_DIR/touchstream-spoke.py" ]; then
+    echo ""
+    echo "Existing installation detected."
+    echo ""
+    echo "What would you like to do?"
+    echo "1) Reinstall (Run full setup again)"
+    echo "2) Update Code (git pull and restart service)"
+    echo "3) Exit"
+    echo ""
+    read -p "Enter choice [1-3]: " CHOICE
+
+    case $CHOICE in
+        1)
+            echo "Proceeding with full reinstallation..."
+            ;;
+        2)
+            echo "Updating code..."
+            # Pull latest changes
+            git pull
+            
+            # Kill existing instances
+            echo "Stopping running instances..."
+            pkill -f touchstream-spoke.py || true
+            
+            # Prompt to restart
+            echo ""
+            echo "Update complete."
+            echo "You can either reboot the device or start the application manually."
+            read -p "Reboot now? (y/n): " REBOOT_CHOICE
+            if [[ $REBOOT_CHOICE =~ ^[Yy]$ ]]; then
+                sudo reboot
+            else
+                echo "Exiting. To start manually: nohup python3 $SCRIPT_DIR/touchstream-spoke.py &"
+                exit 0
+            fi
+            ;;
+        3)
+            echo "Exiting."
+            exit 0
+            ;;
+        *)
+            echo "Invalid choice. Exiting."
+            exit 1
+            ;;
+    esac
+fi
+
 # 0. Expand filesystem to fill SD card
 echo "Expanding filesystem to fill disk..."
 sudo raspi-config --expand-rootfs

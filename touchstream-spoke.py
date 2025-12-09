@@ -14,6 +14,7 @@ Copyright (c) 2025 Will Reeves and TouchStream Contributors
 Licensed under the MIT License - see LICENSE file for details
 """
 import os
+import sys
 from pathlib import Path
 
 # Set environment for better GPU support BEFORE importing Kivy
@@ -175,6 +176,28 @@ class DiscoveryHandler(BaseHTTPRequestHandler):
         if self.path == '/reboot':
             self._send_json({'status': 'reboot_initiated'})
             threading.Thread(target=lambda: (time.sleep(1), os.system('sudo reboot'))).start()
+            return
+
+        if self.path == '/update':
+            self._send_json({'status': 'updating'})
+            
+            def do_update():
+                time.sleep(1)
+                try:
+                    # git pull
+                    print("Running git pull...")
+                    result = subprocess.run(['git', 'pull'], check=False, capture_output=True, text=True)
+                    print(f"Git output: {result.stdout}")
+                    if result.returncode != 0:
+                        print(f"Git error: {result.stderr}")
+                    
+                    # Restart process
+                    print("Restarting application...")
+                    os.execv(sys.executable, ['python3'] + sys.argv)
+                except Exception as e:
+                    print(f"Update failed: {e}")
+
+            threading.Thread(target=do_update).start()
             return
 
         self.send_response(404)

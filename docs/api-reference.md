@@ -25,10 +25,10 @@ Complete reference for all network protocols and APIs used by TouchStream Spoke 
 
 #### Fields
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `device_name` | string | Device hostname or user-assigned name | `"raspberrypi"` or `"Living Room Camera"` |
-| `device_id` | string | Unique device identifier, or `"unadopted"` if not configured | `"550e8400-e29b-41d4-a716-446655440000"` |
+| Field         | Type   | Description                                                  | Example                                   |
+| ------------- | ------ | ------------------------------------------------------------ | ----------------------------------------- |
+| `device_name` | string | Device hostname or user-assigned name                        | `"raspberrypi"` or `"Living Room Camera"` |
+| `device_id`   | string | Unique device identifier, or `"unadopted"` if not configured | `"550e8400-e29b-41d4-a716-446655440000"`  |
 
 #### Example Beacon (Unadopted)
 
@@ -112,13 +112,13 @@ Host: 192.168.1.100:6077
 
 **Response Fields:**
 
-| Field | Type | Description | Possible Values |
-|-------|------|-------------|-----------------|
-| `device_id` | string | Unique device identifier | UUID or `"unadopted"` |
-| `device_name` | string | Device name | Any string |
-| `ip` | string | Device's IP address on the network | IPv4 address |
-| `model` | string | Device model identifier | `"raspberry-pi"` |
-| `status` | string | Device operational status | `"ready"` |
+| Field         | Type   | Description                        | Possible Values       |
+| ------------- | ------ | ---------------------------------- | --------------------- |
+| `device_id`   | string | Unique device identifier           | UUID or `"unadopted"` |
+| `device_name` | string | Device name                        | Any string            |
+| `ip`          | string | Device's IP address on the network | IPv4 address          |
+| `model`       | string | Device model identifier            | `"raspberry-pi"`      |
+| `status`      | string | Device operational status          | `"ready"`             |
 
 **Example Request:**
 ```bash
@@ -138,10 +138,10 @@ curl http://192.168.1.100:6077/info
 
 **Error Responses:**
 
-| Status Code | Description |
-|-------------|-------------|
-| 404 | Endpoint not found |
-| 500 | Internal server error |
+| Status Code | Description           |
+| ----------- | --------------------- |
+| 404         | Endpoint not found    |
+| 500         | Internal server error |
 
 ---
 
@@ -170,17 +170,17 @@ Content-Type: application/json
 
 **Request Fields:**
 
-| Field | Type | Required | Description | Example |
-|-------|------|----------|-------------|---------|
-| `device_id` | string | **Yes** | Unique identifier to assign | `"550e8400-e29b-41d4-a716-446655440000"` |
-| `device_name` | string | **Yes** | Human-readable device name | `"Living Room Camera"` |
-| `location` | string | No | Physical location description | `"Living Room"` |
-| `ingest_url` | string | **Yes** | RTMP server URL (without stream key) | `"rtmp://ingest.example.com/live"` |
-| `stream_key` | string | **Yes** | RTMP stream key/path | `"spoke_abc123"` |
-| `video_bitrate` | string | No | H.264 encoding bitrate | `"4000k"` (default) |
-| `audio_bitrate` | string | No | AAC encoding bitrate | `"128k"` (default) |
-| `resolution` | string | No | Video resolution | `"1920x1080"` (default) |
-| `framerate` | string | No | Video frame rate | `"30"` (default) |
+| Field           | Type   | Required | Description                          | Example                                  |
+| --------------- | ------ | -------- | ------------------------------------ | ---------------------------------------- |
+| `device_id`     | string | **Yes**  | Unique identifier to assign          | `"550e8400-e29b-41d4-a716-446655440000"` |
+| `device_name`   | string | **Yes**  | Human-readable device name           | `"Living Room Camera"`                   |
+| `location`      | string | No       | Physical location description        | `"Living Room"`                          |
+| `ingest_url`    | string | **Yes**  | RTMP server URL (without stream key) | `"rtmp://ingest.example.com/live"`       |
+| `stream_key`    | string | **Yes**  | RTMP stream key/path                 | `"spoke_abc123"`                         |
+| `video_bitrate` | string | No       | H.264 encoding bitrate               | `"4000k"` (default)                      |
+| `audio_bitrate` | string | No       | AAC encoding bitrate                 | `"128k"` (default)                       |
+| `resolution`    | string | No       | Video resolution                     | `"1920x1080"` (default)                  |
+| `framerate`     | string | No       | Video frame rate                     | `"30"` (default)                         |
 
 **Response:** 200 OK
 ```json
@@ -237,11 +237,83 @@ curl -X POST http://192.168.1.100:6077/adopt \
 
 **Error Responses:**
 
-| Status Code | Description |
-|-------------|-------------|
-| 400 | Invalid JSON payload |
-| 404 | Endpoint not found |
-| 500 | Configuration save failed |
+| Status Code | Description               |
+| ----------- | ------------------------- |
+| 400         | Invalid JSON payload      |
+| 404         | Endpoint not found        |
+| 500         | Configuration save failed |
+
+---
+
+#### POST /shutdown
+
+Initiates a system shutdown.
+
+**Request:**
+```http
+POST /shutdown HTTP/1.1
+Host: 192.168.1.100:6077
+```
+
+**Response:** 200 OK
+```json
+{
+  "status": "shutdown_initiated"
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://192.168.1.100:6077/shutdown
+```
+
+---
+
+#### POST /reboot
+
+Initiates a system reboot.
+
+**Request:**
+```http
+POST /reboot HTTP/1.1
+Host: 192.168.1.100:6077
+```
+
+**Response:** 200 OK
+```json
+{
+  "status": "reboot_initiated"
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://192.168.1.100:6077/reboot
+```
+
+---
+
+#### POST /update
+
+Updates the application code via `git pull` and restarts the service.
+
+**Request:**
+```http
+POST /update HTTP/1.1
+Host: 192.168.1.100:6077
+```
+
+**Response:** 200 OK
+```json
+{
+  "status": "updating"
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://192.168.1.100:6077/update
+```
 
 ---
 
@@ -271,35 +343,35 @@ udp://192.168.1.100:5000
 
 #### Video
 
-| Parameter | Value | Notes |
-|-----------|-------|-------|
-| Codec | H.264 (AVC) | libx264 encoder |
-| Profile | Baseline/Main | Depends on encoder |
-| Level | 4.0 | Typical for 1080p |
-| Resolution | 1920x1080 | Configurable |
-| Frame Rate | 30 fps | Configurable |
-| Bitrate | 4000 kbps | Configurable (default) |
-| Keyframe Interval | 2 seconds | 60 frames @ 30fps |
-| Pixel Format | YUV420p | Standard |
-| Preset | veryfast | Low latency, lower CPU |
-| Tune | zerolatency | Minimal buffering |
+| Parameter         | Value         | Notes                  |
+| ----------------- | ------------- | ---------------------- |
+| Codec             | H.264 (AVC)   | libx264 encoder        |
+| Profile           | Baseline/Main | Depends on encoder     |
+| Level             | 4.0           | Typical for 1080p      |
+| Resolution        | 1920x1080     | Configurable           |
+| Frame Rate        | 30 fps        | Configurable           |
+| Bitrate           | 4000 kbps     | Configurable (default) |
+| Keyframe Interval | 2 seconds     | 60 frames @ 30fps      |
+| Pixel Format      | YUV420p       | Standard               |
+| Preset            | veryfast      | Low latency, lower CPU |
+| Tune              | zerolatency   | Minimal buffering      |
 
 #### Audio
 
-| Parameter | Value | Notes |
-|-----------|-------|-------|
-| Codec | AAC | Advanced Audio Coding |
-| Sample Rate | 48000 Hz | From HDMI source |
-| Channels | 2 (Stereo) | From HDMI source |
-| Bitrate | 128 kbps | Configurable (default) |
-| Profile | LC (Low Complexity) | Standard |
+| Parameter   | Value               | Notes                  |
+| ----------- | ------------------- | ---------------------- |
+| Codec       | AAC                 | Advanced Audio Coding  |
+| Sample Rate | 48000 Hz            | From HDMI source       |
+| Channels    | 2 (Stereo)          | From HDMI source       |
+| Bitrate     | 128 kbps            | Configurable (default) |
+| Profile     | LC (Low Complexity) | Standard               |
 
 #### Container
 
-| Parameter | Value |
-|-----------|-------|
-| Format | MPEG-TS (Transport Stream) |
-| Muxer | UDP/RTP |
+| Parameter | Value                      |
+| --------- | -------------------------- |
+| Format    | MPEG-TS (Transport Stream) |
+| Muxer     | UDP/RTP                    |
 
 ### FFmpeg Command
 
@@ -365,18 +437,18 @@ ffmpeg \
 
 ### Field Definitions
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `device_id` | string \| null | `null` | Unique device identifier (null = unadopted) |
-| `device_name` | string | hostname | Device display name |
-| `location` | string | `""` | Physical location description |
-| `ingest_url` | string | `""` | RTMP server base URL |
-| `stream_key` | string | `""` | RTMP stream key |
-| `video_bitrate` | string | `"4000k"` | H.264 bitrate (e.g., "2000k", "6000k") |
-| `audio_bitrate` | string | `"128k"` | AAC bitrate (e.g., "96k", "192k") |
-| `resolution` | string | `"1920x1080"` | Video resolution (WxH) |
-| `framerate` | string | `"30"` | Video frame rate (fps) |
-| `audio_muted` | boolean | `false` | Local audio playback muted |
+| Field           | Type           | Default       | Description                                 |
+| --------------- | -------------- | ------------- | ------------------------------------------- |
+| `device_id`     | string \| null | `null`        | Unique device identifier (null = unadopted) |
+| `device_name`   | string         | hostname      | Device display name                         |
+| `location`      | string         | `""`          | Physical location description               |
+| `ingest_url`    | string         | `""`          | RTMP server base URL                        |
+| `stream_key`    | string         | `""`          | RTMP stream key                             |
+| `video_bitrate` | string         | `"4000k"`     | H.264 bitrate (e.g., "2000k", "6000k")      |
+| `audio_bitrate` | string         | `"128k"`      | AAC bitrate (e.g., "96k", "192k")           |
+| `resolution`    | string         | `"1920x1080"` | Video resolution (WxH)                      |
+| `framerate`     | string         | `"30"`        | Video frame rate (fps)                      |
+| `audio_muted`   | boolean        | `false`       | Local audio playback muted                  |
 
 ### Example (Unadopted)
 
@@ -440,13 +512,13 @@ v4l2-ctl -d /dev/video0 --all
 
 ### Supported Formats
 
-| Parameter | Value |
-|-----------|-------|
+| Parameter    | Value        |
+| ------------ | ------------ |
 | Pixel Format | UYVY (4:2:2) |
-| Resolution | 1920x1080 |
-| Frame Rate | 30 fps |
-| Colorimetry | BT.601 |
-| Field | Progressive |
+| Resolution   | 1920x1080    |
+| Frame Rate   | 30 fps       |
+| Colorimetry  | BT.601       |
+| Field        | Progressive  |
 
 ### Timings
 
@@ -533,12 +605,12 @@ v4l2src device=/dev/video0
 
 ### Pipeline Elements
 
-| Element | Purpose | Configuration |
-|---------|---------|---------------|
-| `v4l2src` | Capture from V4L2 device | `device=/dev/video0` |
-| `videoscale` | Downscale for performance | `add-borders=false` |
-| `videoconvert` | Color space conversion | `n-threads=4` |
-| `appsink` | Output to application | `max-buffers=1 drop=true sync=false` |
+| Element        | Purpose                   | Configuration                        |
+| -------------- | ------------------------- | ------------------------------------ |
+| `v4l2src`      | Capture from V4L2 device  | `device=/dev/video0`                 |
+| `videoscale`   | Downscale for performance | `add-borders=false`                  |
+| `videoconvert` | Color space conversion    | `n-threads=4`                        |
+| `appsink`      | Output to application     | `max-buffers=1 drop=true sync=false` |
 
 ### Test Pipeline
 
@@ -553,11 +625,11 @@ gst-launch-1.0 v4l2src device=/dev/video0 \
 
 ## Port Reference
 
-| Port | Protocol | Direction | Purpose |
-|------|----------|-----------|---------|
-| 6077 | TCP (HTTP) | Inbound | Discovery API server |
-| 9999 | UDP | Outbound | Beacon broadcast |
-| 5000+ | UDP | Outbound | Video streaming (configurable) |
+| Port  | Protocol   | Direction | Purpose                        |
+| ----- | ---------- | --------- | ------------------------------ |
+| 6077  | TCP (HTTP) | Inbound   | Discovery API server           |
+| 9999  | UDP        | Outbound  | Beacon broadcast               |
+| 5000+ | UDP        | Outbound  | Video streaming (configurable) |
 
 ### Firewall Configuration
 
@@ -585,18 +657,18 @@ sudo ufw allow 5000/udp
 
 ### Device Status
 
-| Status | Description |
-|--------|-------------|
-| `ready` | Device operational and ready for configuration |
-| `streaming` | Currently streaming to ingest server |
-| `error` | Device in error state |
+| Status      | Description                                    |
+| ----------- | ---------------------------------------------- |
+| `ready`     | Device operational and ready for configuration |
+| `streaming` | Currently streaming to ingest server           |
+| `error`     | Device in error state                          |
 
 ### Adoption Status
 
-| device_id Value | Status |
-|-----------------|--------|
+| device_id Value         | Status                              |
+| ----------------------- | ----------------------------------- |
 | `null` or `"unadopted"` | Not adopted, awaiting configuration |
-| UUID string | Adopted and configured |
+| UUID string             | Adopted and configured              |
 
 ---
 
@@ -614,13 +686,13 @@ All error responses follow this format:
 
 ### Common Errors
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| Connection refused (port 6077) | Discovery server not running | Check if touchstream-spoke.py is running |
-| Timeout | Network connectivity issue | Verify network connection |
-| Invalid JSON | Malformed request payload | Validate JSON syntax |
-| Stream not starting | Missing ingest_url or stream_key | Provide complete configuration |
-| No video signal | No HDMI input | Connect HDMI source |
+| Error                          | Cause                            | Solution                                 |
+| ------------------------------ | -------------------------------- | ---------------------------------------- |
+| Connection refused (port 6077) | Discovery server not running     | Check if touchstream-spoke.py is running |
+| Timeout                        | Network connectivity issue       | Verify network connection                |
+| Invalid JSON                   | Malformed request payload        | Validate JSON syntax                     |
+| Stream not starting            | Missing ingest_url or stream_key | Provide complete configuration           |
+| No video signal                | No HDMI input                    | Connect HDMI source                      |
 
 ---
 
@@ -692,13 +764,13 @@ POST /v1/adopt
 
 ### Protocol Compatibility
 
-| Component | Version | Notes |
-|-----------|---------|-------|
-| RTMP | 1.0 | Standard RTMP protocol |
-| HTTP | 1.1 | Standard HTTP/1.1 |
-| UDP | IPv4 | Broadcast on local subnet |
-| GStreamer | 1.0+ | Requires GStreamer 1.x |
-| FFmpeg | 4.0+ | Tested with FFmpeg 4.x and 5.x |
+| Component | Version | Notes                          |
+| --------- | ------- | ------------------------------ |
+| RTMP      | 1.0     | Standard RTMP protocol         |
+| HTTP      | 1.1     | Standard HTTP/1.1              |
+| UDP       | IPv4    | Broadcast on local subnet      |
+| GStreamer | 1.0+    | Requires GStreamer 1.x         |
+| FFmpeg    | 4.0+    | Tested with FFmpeg 4.x and 5.x |
 
 ---
 

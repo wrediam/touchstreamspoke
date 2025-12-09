@@ -63,6 +63,8 @@ cd ~ && git clone https://github.com/wrediam/touchstreamspoke.git && cd touchstr
 > Total time: ~10-15 minutes with 2 automatic reboots.
 > 
 > See [INSTALL.md](./docs/INSTALL.md) for detailed installation instructions and troubleshooting.
+>
+> **Reinstall/Update:** If you run the setup script again on an existing installation, it will prompt you to either **Reinstall** (full setup) or **Update** (pull latest code and restart).
 
 ### Step-by-Step Installation
 
@@ -198,13 +200,37 @@ Response:
 
 Configure and adopt device (see Configuration section above).
 
+### POST /shutdown
+
+Initiates a system shutdown.
+
+```bash
+curl -X POST http://<spoke-ip>:6077/shutdown
+```
+
+### POST /reboot
+
+Initiates a system reboot.
+
+```bash
+curl -X POST http://<spoke-ip>:6077/reboot
+```
+
+### POST /update
+
+Updates the application code via `git pull` and restarts the service.
+
+```bash
+curl -X POST http://<spoke-ip>:6077/update
+```
+
 ## Network Ports
 
-| Port | Protocol | Direction | Purpose |
-|------|----------|-----------|---------|
-| 6077 | TCP (HTTP) | Inbound | Discovery API |
-| 9999 | UDP | Outbound | Beacon broadcast |
-| 5000+ | UDP | Outbound | Video streaming (configurable) |
+| Port  | Protocol   | Direction | Purpose                        |
+| ----- | ---------- | --------- | ------------------------------ |
+| 6077  | TCP (HTTP) | Inbound   | Discovery API                  |
+| 9999  | UDP        | Outbound  | Beacon broadcast               |
+| 5000+ | UDP        | Outbound  | Video streaming (configurable) |
 
 ## Hardware Setup
 

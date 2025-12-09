@@ -142,6 +142,18 @@ A cron job is configured to reboot the device at 1:00 AM local time daily:
 - **Internet access** required during setup for package downloads
 - **Static IP recommended** for reliable discovery
 
+## Updating an Existing Installation
+
+The `setup.sh` script detects if TouchStream is already installed and offers two options:
+
+1.  **Reinstall:** Runs the full setup process again. Useful if the system configuration is broken or dependencies need to be repaired.
+2.  **Update:** Pulls the latest code from git, stops the existing process, and prompts to reboot or start the application manually. This preserves system configurations.
+
+To use this feature, simply run the setup script again:
+```bash
+sudo bash setup.sh
+```
+
 ## Post-Setup Verification
 
 After reboot, verify:
