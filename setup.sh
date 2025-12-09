@@ -54,6 +54,7 @@ if [ -f "$SCRIPT_DIR/touchstream-spoke.py" ]; then
             read -p "Reboot now? (y/n): " REBOOT_CHOICE
             if [[ $REBOOT_CHOICE =~ ^[Yy]$ ]]; then
                 sudo reboot
+                exit 0
             else
                 echo "Exiting. To start manually: nohup python3 $SCRIPT_DIR/touchstream-spoke.py &"
                 exit 0
