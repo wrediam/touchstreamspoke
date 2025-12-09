@@ -357,10 +357,18 @@ class AudioMonitor:
         self.on_level = on_level_callback
         self.pipeline = None
         self.running = False
+        self.last_log_time = 0
         if not GST_OK:
             raise RuntimeError("GStreamer not available")
 
     def build_pipeline(self):
+        # List available audio devices for debugging
+        print("Checking available audio devices:")
+        try:
+            os.system("arecord -l")
+        except:
+            pass
+
         # Capture from ALSA, analyze levels, discard audio (no speaker on Pi)
         # level element provides RMS/peak levels for metering
         pipeline_str = (
@@ -400,6 +408,13 @@ class AudioMonitor:
                     left = max(0, min(1, (left_db + 60) / 60))
                     right = max(0, min(1, (right_db + 60) / 60))
                     self.on_level(left, right)
+                    
+                    # LOGGING: Print RMS values occasionally for debugging
+                    now = time.time()
+                    if now - self.last_log_time > 1.0:
+                         print(f"Audio Meter Debug - Left: {left:.2f} ({left_db:.1f}dB), Right: {right:.2f} ({right_db:.1f}dB)")
+                         self.last_log_time = now
+
             except Exception as e:
                 print(f"Audio level parse error: {e}")
 
@@ -428,8 +443,8 @@ class StereoMeter(Widget):
         super().__init__(**kwargs)
         self.left_level = 0
         self.right_level = 0
-        self.bar_width = 4  # 4px wide each bar
-        self.bar_gap = 1    # 1px gap between bars
+        self.bar_width = 10  # 10px wide each bar
+        self.bar_gap = 2    # 2px gap between bars
         self.bind(pos=self._update_canvas, size=self._update_canvas)
         self._update_canvas()
 
@@ -536,7 +551,7 @@ class PreviewRoot(FloatLayout):
         # ---- LEFT SIDE: Stereo Audio Meter (flush left, full video height) ----
         self.audio_meter = StereoMeter(
             size_hint=(None, 0.84),  # Match video area height (between top/bottom bars)
-            width=9,  # 4+1+4 = 9px wide total
+            width=22,  # 10+2+10 = 22px wide total
             pos_hint={'x': 0, 'y': 0.08}  # Flush left, above bottom bar
         )
         self.add_widget(self.audio_meter)
